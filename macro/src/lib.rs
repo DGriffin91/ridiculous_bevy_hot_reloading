@@ -46,15 +46,38 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let dyn_func = quote! {
         pub fn #fn_name(#[allow(unused_mut)] #(#args),*) {
             unsafe {
-                if let Ok(mut exe_path) = std::env::current_exe() {
+                if let Ok(mut lib_path) = std::env::current_exe() {
                     #[cfg(unix)]
-                    exe_path.set_extension("so");
+                    lib_path.set_extension("so");
                     #[cfg(windows)]
-                    exe_path.set_extension("dll");
-                    if let Ok(lib) = libloading::Library::new(exe_path) {
-                        let func: libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) , > =
-                                               lib.get(#fn_name_orig_code_str.as_bytes()).unwrap();
-                        return func(#(#arg_names),*);
+                    lib_path.set_extension("dll");
+                    if lib_path.is_file() {
+                        let stem = lib_path.file_stem().unwrap();
+                        let mod_stem = format!("{}_hot_in_use", stem.to_str().unwrap());
+                        let folder = lib_path.parent().unwrap();
+
+                        let main_lib_meta = std::fs::metadata(&lib_path).unwrap();
+                        let mut hot_lib_path = folder.join(&mod_stem);
+                        #[cfg(unix)]
+                        hot_lib_path.set_extension("so");
+                        #[cfg(windows)]
+                        hot_lib_path.set_extension("dll");
+
+                        if hot_lib_path.exists() {
+                            let hot_lib_meta = std::fs::metadata(&hot_lib_path).unwrap();
+                            if hot_lib_meta.modified().unwrap() < main_lib_meta.modified().unwrap() {
+                                // Try to copy
+                                let _ = std::fs::copy(lib_path, &hot_lib_path);
+                            }
+                        } else {
+                            std::fs::copy(lib_path, &hot_lib_path).unwrap();
+                        }
+
+                        if let Ok(lib) = libloading::Library::new(hot_lib_path) {
+                            let func: libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) , > =
+                                                   lib.get(#fn_name_orig_code_str.as_bytes()).unwrap();
+                            return func(#(#arg_names),*);
+                        }
                     }
                 }
             }
