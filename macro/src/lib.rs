@@ -46,13 +46,19 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let dyn_func = quote! {
         pub fn #fn_name(#[allow(unused_mut)] #(#args),*) {
             unsafe {
-                if let Ok(lib) = libloading::Library::new(FILE_NAME) {
-                    let func: libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) , > = lib.get(#fn_name_orig_code_str.as_bytes()).unwrap();
-                    func(#(#arg_names),*);
-                } else {
-                    #fn_name_orig_code(#(#arg_names),*);
+                if let Ok(mut exe_path) = std::env::current_exe() {
+                    #[cfg(unix)]
+                    exe_path.set_extension("so");
+                    #[cfg(windows)]
+                    exe_path.set_extension("dll");
+                    if let Ok(lib) = libloading::Library::new(exe_path) {
+                        let func: libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) , > =
+                                               lib.get(#fn_name_orig_code_str.as_bytes()).unwrap();
+                        return func(#(#arg_names),*);
+                    }
                 }
             }
+            return #fn_name_orig_code(#(#arg_names),*);
         }
     };
 
