@@ -7,13 +7,14 @@ edition = "2021"
 
 [lib]
 ## Prefix lib name with "lib_"
-name = "lib_ridiculous_bevy_hot_reloading" 
+name = "dyn_ridiculous_bevy_hot_reloading" 
+path = "../src/lib.rs"
 crate-type = ["dylib"]
 
 [dependencies]
 bevy = { version = "0.9.0", features = ["dynamic"] }
 libloading = "0.7" 
-hot_reload_lib = { version = "*", path = "./macro" }
+hot_reload_lib = { version = "*", path = "../macro" }
 
 # Enable max optimizations for dependencies, but not for our code:
 [profile.dev.package."*"]

@@ -47,6 +47,10 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
         pub fn #fn_name(#[allow(unused_mut)] #(#args),*) {
             unsafe {
                 if let Ok(mut lib_path) = std::env::current_exe() {
+                    let folder = lib_path.parent().unwrap();
+                    let stem = lib_path.file_stem().unwrap();
+                    let mod_stem = format!("dyn_{}", stem.to_str().unwrap());
+                    let mut lib_path = folder.join(&mod_stem);
                     #[cfg(unix)]
                     lib_path.set_extension("so");
                     #[cfg(windows)]
@@ -54,7 +58,6 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     if lib_path.is_file() {
                         let stem = lib_path.file_stem().unwrap();
                         let mod_stem = format!("{}_hot_in_use", stem.to_str().unwrap());
-                        let folder = lib_path.parent().unwrap();
 
                         let main_lib_meta = std::fs::metadata(&lib_path).unwrap();
                         let mut hot_lib_path = folder.join(&mod_stem);

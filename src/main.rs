@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use ridiculous_bevy_hot_reloading::{rotate, rotate2, setup};
+use lib_ridiculous_bevy_hot_reloading::{rotate, rotate2, setup};
 
 fn main() {
     App::new()

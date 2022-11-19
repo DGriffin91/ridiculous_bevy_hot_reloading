@@ -76,13 +76,6 @@ pub fn setup(
     });
 }
 
-//#[make_hot]
-//pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
-//    for mut transform in &mut query {
-//        transform.rotate_x(time.delta_seconds() * 5.0);
-//    }
-//}
-
 #[make_hot]
 pub fn rotate2(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
     for mut transform in &mut query {
@@ -94,7 +87,7 @@ pub fn rotate2(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
 #[make_hot]
 pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
     for mut transform in &mut query {
-        transform.rotate_x(time.delta_seconds() * 5.0);
+        transform.rotate_x(time.delta_seconds() * 6.0);
     }
 }
 
