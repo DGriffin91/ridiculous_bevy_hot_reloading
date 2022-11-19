@@ -5,6 +5,7 @@ use bevy::{
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
+use hot_reload_lib::make_hot;
 
 /// A marker component for our shapes so we can query them separately from the ground plane
 #[derive(Component)]
@@ -77,50 +78,20 @@ pub fn setup(
 
 const FILE_NAME: &str = "H:/rustcache/debug/ridiculous_bevy_hot_reloading.dll";
 
-macro_rules! make_hot {
-    ($arg_names:tt $arg_types:tt pub fn $fn_name:ident $prams:tt $bl:block) => {
-        ::paste::paste! {
-            #[no_mangle]
-            fn [<ridiculous_bevy_hot_ $fn_name >] $prams $bl
-
-            pub fn $fn_name $prams {
-                unsafe {
-                    let s = concat!("ridiculous_bevy_hot_", stringify!($fn_name));
-                    if let Ok(lib) = libloading::Library::new(FILE_NAME) {
-                        let func: libloading::Symbol<
-                            unsafe extern "C" fn $arg_types ,
-                        > = lib.get(s.as_bytes()).unwrap();
-                        func $arg_names;
-                    } else {
-                        [<ridiculous_bevy_hot_ $fn_name >] $arg_names;
-                    }
-                }
-
-            }
-        }
-    };
+#[make_hot]
+pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
+    for mut transform in &mut query {
+        transform.rotate_x(time.delta_seconds() * 1.0);
+    }
 }
 
-make_hot!(
-    (query, time)
-    (Query<&mut Transform, With<Shape>>, Res<Time>)
-    pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
-        for mut transform in &mut query {
-            transform.rotate_x(time.delta_seconds() * 1.0);
-        }
+#[make_hot]
+pub fn rotate2(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
+    for mut transform in &mut query {
+        let rot = Quat::from_rotation_y(0.1 * time.delta_seconds());
+        transform.translate_around(vec3(0.0, 0.0, 0.0), rot);
     }
-);
-
-make_hot!(
-    (query, time)
-    (Query<&mut Transform, With<Shape>>, Res<Time>)
-    pub fn rotate2(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
-        for mut transform in &mut query {
-            let rot = Quat::from_rotation_y(0.1 * time.delta_seconds());
-            transform.translate_around(vec3(0.0,0.0,0.0), rot);
-        }
-    }
-);
+}
 
 /// Creates a colorful test pattern
 fn uv_debug_texture() -> Image {

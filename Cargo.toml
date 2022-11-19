@@ -11,7 +11,7 @@ crate-type = ["rlib", "dylib"]
 [dependencies]
 bevy = "0.9.0"
 libloading = "0.7" 
-paste = "1.0.9"
+hot_reload_lib = { version = "*", path = "./macro" }
 
 # Enable max optimizations for dependencies, but not for our code:
 [profile.dev.package."*"]
