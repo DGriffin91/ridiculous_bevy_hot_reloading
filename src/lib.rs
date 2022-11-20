@@ -1,120 +1,99 @@
-use std::f32::consts::PI;
+extern crate proc_macro;
 
-use bevy::{
-    math::vec3,
-    prelude::*,
-    render::render_resource::{Extent3d, TextureDimension, TextureFormat},
-};
-use hot_reload_lib::make_hot;
+use proc_macro::TokenStream;
+use proc_macro2::*;
+use syn::{parse_macro_input, FnArg, ItemFn};
 
-/// A marker component for our shapes so we can query them separately from the ground plane
-#[derive(Component)]
-pub struct Shape;
+use quote::quote;
 
-const X_EXTENT: f32 = 14.;
+#[proc_macro_attribute]
+pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    #[cfg(feature = "bypass")]
+    {
+        return item;
+    }
+    let ast = parse_macro_input!(item as ItemFn);
 
-pub fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut images: ResMut<Assets<Image>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    let debug_material = materials.add(StandardMaterial {
-        base_color_texture: Some(images.add(uv_debug_texture())),
-        ..default()
-    });
+    let fn_name = &ast.sig.ident;
 
-    let shapes = [
-        meshes.add(shape::Cube::default().into()),
-        meshes.add(shape::Box::default().into()),
-        meshes.add(shape::Capsule::default().into()),
-        meshes.add(shape::Torus::default().into()),
-        meshes.add(shape::Icosphere::default().try_into().unwrap()),
-        meshes.add(shape::UVSphere::default().into()),
-    ];
+    let mut args = Vec::new();
+    let mut arg_names = Vec::new();
+    let mut arg_types = Vec::new();
 
-    let num_shapes = shapes.len();
-
-    for (i, shape) in shapes.into_iter().enumerate() {
-        commands.spawn((
-            PbrBundle {
-                mesh: shape,
-                material: debug_material.clone(),
-                transform: Transform::from_xyz(
-                    -X_EXTENT / 2. + i as f32 / (num_shapes - 1) as f32 * X_EXTENT,
-                    2.0,
-                    0.0,
-                )
-                .with_rotation(Quat::from_rotation_x(-PI / 4.)),
-                ..default()
-            },
-            Shape,
-        ));
+    for arg in ast.sig.inputs {
+        args.push(arg.clone());
+        match arg {
+            FnArg::Receiver(_) => (),
+            FnArg::Typed(a) => {
+                match *a.pat {
+                    syn::Pat::Ident(id) => arg_names.push(id.ident),
+                    _ => (),
+                }
+                arg_types.push(a.ty)
+            }
+        }
     }
 
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 9000.0,
-            range: 100.,
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform::from_xyz(8.0, 16.0, 8.0),
-        ..default()
-    });
+    let fn_name_orig_code_str = &format!("ridiculous_bevy_hot_{}", fn_name);
 
-    // ground plane
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Plane { size: 50. }.into()),
-        material: materials.add(Color::SILVER.into()),
-        ..default()
-    });
+    let fn_name_orig_code = &Ident::new(fn_name_orig_code_str, Span::call_site());
 
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 6., 12.0).looking_at(Vec3::new(0., 1., 0.), Vec3::Y),
-        ..default()
-    });
-}
+    let orig_stmts = ast.block.stmts;
 
-#[make_hot]
-pub fn rotate2(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
-    for mut transform in &mut query {
-        let rot = Quat::from_rotation_y(1.1 * time.delta_seconds());
-        transform.translate_around(vec3(0.0, 0.0, 0.0), rot);
-    }
-}
+    let orig_func = quote! {
+        #[no_mangle]
+        pub fn #fn_name_orig_code(#[allow(unused_mut)] #(#args),*) {
+            #(#orig_stmts)*
+        }
+    };
 
-#[make_hot]
-pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
-    for mut transform in &mut query {
-        transform.rotate_x(time.delta_seconds() * 6.0);
-    }
-}
+    let dyn_func = quote! {
+        pub fn #fn_name(#[allow(unused_mut)] #(#args),*) {
+            unsafe {
+                if let Ok(mut lib_path) = std::env::current_exe() {
+                    let folder = lib_path.parent().unwrap();
+                    let stem = lib_path.file_stem().unwrap();
+                    let mod_stem = format!("lib_{}", stem.to_str().unwrap());
+                    let mut lib_path = folder.join(&mod_stem);
+                    #[cfg(unix)]
+                    lib_path.set_extension("so");
+                    #[cfg(windows)]
+                    lib_path.set_extension("dll");
+                    if lib_path.is_file() {
+                        let stem = lib_path.file_stem().unwrap();
+                        let mod_stem = format!("{}_hot_in_use", stem.to_str().unwrap());
 
-/// Creates a colorful test pattern
-fn uv_debug_texture() -> Image {
-    const TEXTURE_SIZE: usize = 8;
+                        let main_lib_meta = std::fs::metadata(&lib_path).unwrap();
+                        let mut hot_lib_path = folder.join(&mod_stem);
+                        #[cfg(unix)]
+                        hot_lib_path.set_extension("so");
+                        #[cfg(windows)]
+                        hot_lib_path.set_extension("dll");
 
-    let mut palette: [u8; 32] = [
-        255, 102, 159, 255, 255, 159, 102, 255, 236, 255, 102, 255, 121, 255, 102, 255, 102, 255,
-        198, 255, 102, 198, 255, 255, 121, 102, 255, 255, 236, 102, 255, 255,
-    ];
+                        if hot_lib_path.exists() {
+                            let hot_lib_meta = std::fs::metadata(&hot_lib_path).unwrap();
+                            if hot_lib_meta.modified().unwrap() < main_lib_meta.modified().unwrap() {
+                                // Try to copy
+                                let _ = std::fs::copy(lib_path, &hot_lib_path);
+                            }
+                        } else {
+                            std::fs::copy(lib_path, &hot_lib_path).unwrap();
+                        }
 
-    let mut texture_data = [0; TEXTURE_SIZE * TEXTURE_SIZE * 4];
-    for y in 0..TEXTURE_SIZE {
-        let offset = TEXTURE_SIZE * y * 4;
-        texture_data[offset..(offset + TEXTURE_SIZE * 4)].copy_from_slice(&palette);
-        palette.rotate_right(4);
-    }
+                        if let Ok(lib) = libloading::Library::new(hot_lib_path) {
+                            let func: libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) , > =
+                                                   lib.get(#fn_name_orig_code_str.as_bytes()).unwrap();
+                            return func(#(#arg_names),*);
+                        }
+                    }
+                }
+            }
+            return #fn_name_orig_code(#(#arg_names),*);
+        }
+    };
 
-    Image::new_fill(
-        Extent3d {
-            width: TEXTURE_SIZE as u32,
-            height: TEXTURE_SIZE as u32,
-            depth_or_array_layers: 1,
-        },
-        TextureDimension::D2,
-        &texture_data,
-        TextureFormat::Rgba8UnormSrgb,
-    )
+    TokenStream::from(quote! {
+        #orig_func
+        #dyn_func
+    })
 }

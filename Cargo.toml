@@ -5,20 +5,15 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[lib]
-## Prefix lib name with "lib_"
-name = "lib_ridiculous_bevy_hot_reloading" 
-crate-type = ["dylib"]
-
 [dependencies]
-bevy = { version = "0.9.0", features = ["dynamic"] }
+syn = {version = "1.0", features = ["extra-traits", "derive", "full"]}
+quote = "1.0"
+proc-macro2 = "1.0"
 libloading = "0.7" 
-hot_reload_lib = { version = "*", path = "./macro" }
 
-# Enable max optimizations for dependencies, but not for our code:
-[profile.dev.package."*"]
-opt-level = 3
+[lib]
+proc-macro = true
 
-# Enable only a small amount of optimization in debug mode
-[profile.dev]
-opt-level = 3
+[features]
+# Bypass all hot macros
+bypass = []
