@@ -4,3 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 
+[dependencies]
+hot_reloading_macros = { path = "macros", features = [] } 
+
+[features]
+unicode-gencat = ["hot_reloading_macros/bypass"]

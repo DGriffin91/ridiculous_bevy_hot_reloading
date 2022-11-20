@@ -18,7 +18,6 @@ bevy = { version = "0.9" }
 libloading = "0.7" 
 
 # use "bypass" feature to bypass all hot macros
-hot_reloading_macros = { version = "*", path = "../../macros", features = [] } 
 ridiculous_bevy_hot_reloading = { version = "*", path = "../..", features = [] } 
 
 [build-dependencies]

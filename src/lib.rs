@@ -1,3 +1,5 @@
+pub use hot_reloading_macros;
+
 use std::time::UNIX_EPOCH;
 
 pub fn lib_updated() -> Option<std::time::SystemTime> {

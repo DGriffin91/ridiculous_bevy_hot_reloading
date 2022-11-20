@@ -1,15 +1,13 @@
-use std::{
-    f32::consts::PI,
-    time::{Duration, SystemTime},
-};
+use std::f32::consts::PI;
 
 use bevy::{
     math::vec3,
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
-use hot_reloading_macros::make_hot;
-use ridiculous_bevy_hot_reloading::{lib_hot_updated_f64, lib_updated_f64};
+use ridiculous_bevy_hot_reloading::{
+    hot_reloading_macros::make_hot, lib_hot_updated_f64, lib_updated_f64,
+};
 
 /// A marker component for our shapes so we can query them separately from the ground plane
 #[derive(Component)]
@@ -91,7 +89,7 @@ pub fn rotate2(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
 #[make_hot]
 pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
     for mut transform in &mut query {
-        transform.rotate_x(time.delta_seconds() * 5.0);
+        transform.rotate_x(time.delta_seconds() * 1.0);
     }
 }
 
