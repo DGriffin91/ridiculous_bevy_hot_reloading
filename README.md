@@ -31,8 +31,15 @@ edition = "2021"
 name = "lib_your_game" 
 path = "src/lib.rs"
 crate-type = ["rlib", "dylib"]
+
+[dependencies]
+bevy = { version = "0.9" }
+
+# use "bypass" feature to bypass all hot macros
+ridiculous_bevy_hot_reloading = { git = "https://github.com/DGriffin91/ridiculous_bevy_hot_reloading", features = ["bevy_plugin"] } 
 ```
 *Currenly this naming scheme with "lib_" prefix is required.*
+
 
 Manually use cargo watch with (bevy/dynamic optional):
 ```
