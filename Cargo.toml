@@ -8,4 +8,4 @@ edition = "2021"
 hot_reloading_macros = { path = "macros", features = [] } 
 
 [features]
-unicode-gencat = ["hot_reloading_macros/bypass"]
+bypass = ["hot_reloading_macros/bypass"]
