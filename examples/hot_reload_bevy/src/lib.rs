@@ -1,11 +1,15 @@
-use std::f32::consts::PI;
+use std::{
+    f32::consts::PI,
+    time::{Duration, SystemTime},
+};
 
 use bevy::{
     math::vec3,
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
-use ridiculous_bevy_hot_reloading::make_hot;
+use hot_reloading_macros::make_hot;
+use ridiculous_bevy_hot_reloading::{lib_hot_updated_f64, lib_updated_f64};
 
 /// A marker component for our shapes so we can query them separately from the ground plane
 #[derive(Component)]
@@ -87,7 +91,22 @@ pub fn rotate2(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
 #[make_hot]
 pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
     for mut transform in &mut query {
-        transform.rotate_x(time.delta_seconds() * 1.0);
+        transform.rotate_x(time.delta_seconds() * 5.0);
+    }
+}
+
+// lib_hot_updated could be used to run some code only on update
+
+pub fn print_last_update(mut update_prev: Local<(f64, f64)>) {
+    let lib_prev = lib_updated_f64().unwrap();
+    if lib_prev > update_prev.0 {
+        println!("lib_updated {:?}", lib_prev);
+        update_prev.0 = lib_prev;
+    }
+    let lib_prev = lib_hot_updated_f64().unwrap();
+    if lib_prev > update_prev.1 {
+        println!("lib_hot_updated {:?}", lib_prev);
+        update_prev.1 = lib_prev;
     }
 }
 

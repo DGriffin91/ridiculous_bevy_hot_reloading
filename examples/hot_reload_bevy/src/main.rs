@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use lib_hot_reload_bevy::{rotate, rotate2, setup};
+use lib_hot_reload_bevy::{print_last_update, rotate, rotate2, setup};
 
 fn main() {
     App::new()
@@ -7,5 +7,6 @@ fn main() {
         .add_startup_system(setup)
         .add_system(rotate)
         .add_system(rotate2)
+        .add_system(print_last_update)
         .run();
 }
