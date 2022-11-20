@@ -2,7 +2,8 @@
 
 Usage with `bevy_plugin` feature.
 ```rs
-app.add_plugin(HotReload { auto_watch: true });
+//Default has auto_watch: true, bevy_dynamic: true, and lib_ prefix
+app.add_plugin(HotReload::default());
 
 [...]
 
@@ -33,12 +34,10 @@ path = "src/lib.rs"
 crate-type = ["rlib", "dylib"]
 
 [dependencies]
-bevy = { version = "0.9" }
-
 # use "bypass" feature to bypass all hot macros
 ridiculous_bevy_hot_reloading = { git = "https://github.com/DGriffin91/ridiculous_bevy_hot_reloading", features = ["bevy_plugin"] } 
 ```
-*Currenly this naming scheme with "lib_" prefix is required.*
+*This naming scheme with "lib_" prefix is default and required for `make_hot` but for `make_hot_system` it can be configured with HotReload::library_name.*
 
 
 Manually use cargo watch with (bevy/dynamic optional):

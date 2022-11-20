@@ -9,6 +9,7 @@ fn main() {
         .add_system(rotate)
         .add_system(rotate2)
         .add_system(print_last_update)
-        .add_plugin(HotReload { auto_watch: true })
+        //Default has auto_watch: true, bevy_dynamic: true, and lib_ prefix
+        .add_plugin(HotReload::default())
         .run();
 }
