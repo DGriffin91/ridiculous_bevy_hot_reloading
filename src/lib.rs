@@ -63,7 +63,7 @@ pub fn lib_hot_updated_f64() -> Option<f64> {
 pub mod bevy_plugin {
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    use bevy::{app::AppExit, prelude::*};
+    use bevy::{app::AppExit, prelude::*, window::WindowCloseRequested};
     use libloading::Library;
 
     #[derive(Resource, Default)]
@@ -188,8 +188,12 @@ pub mod bevy_plugin {
         }
     }
 
-    fn clean_up_watch(events: EventReader<AppExit>, mut lib_res: ResMut<HotReloadLib>) {
-        if !events.is_empty() {
+    fn clean_up_watch(
+        app_exit: EventReader<AppExit>,
+        window_close: EventReader<WindowCloseRequested>,
+        mut lib_res: ResMut<HotReloadLib>,
+    ) {
+        if !app_exit.is_empty() || !window_close.is_empty() {
             if let Some(child) = &mut lib_res.cargo_watch_child {
                 child.kill().unwrap();
             }
