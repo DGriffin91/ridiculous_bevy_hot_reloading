@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 hot_reloading_macros = { path = "macros", features = [] } 
+libloading = "0.7" 
 
 [features]
 bypass = ["hot_reloading_macros/bypass"]

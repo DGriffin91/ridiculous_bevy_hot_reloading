@@ -34,6 +34,8 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     }
 
+    let return_type = ast.sig.output;
+
     let fn_name_orig_code_str = &format!("ridiculous_bevy_hot_{}", fn_name);
 
     let fn_name_orig_code = &Ident::new(fn_name_orig_code_str, Span::call_site());
@@ -42,13 +44,13 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let orig_func = quote! {
         #[no_mangle]
-        pub fn #fn_name_orig_code(#[allow(unused_mut)] #(#args),*) {
+        pub fn #fn_name_orig_code(#[allow(unused_mut)] #(#args),*) #return_type {
             #(#orig_stmts)*
         }
     };
 
     let dyn_func = quote! {
-        pub fn #fn_name(#[allow(unused_mut)] #(#args),*) {
+        pub fn #fn_name(#[allow(unused_mut)] #(#args),*) #return_type  {
             unsafe {
                 if let Ok(mut lib_path) = std::env::current_exe() {
                     let folder = lib_path.parent().unwrap();
@@ -81,7 +83,7 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
                         }
 
                         if let Ok(lib) = libloading::Library::new(hot_lib_path) {
-                            let func: libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) , > =
+                            let func: libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) #return_type , > =
                                                    lib.get(#fn_name_orig_code_str.as_bytes()).unwrap();
                             return func(#(#arg_names),*);
                         }

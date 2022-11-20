@@ -1,4 +1,5 @@
 pub use hot_reloading_macros;
+pub use libloading;
 
 use std::time::UNIX_EPOCH;
 
