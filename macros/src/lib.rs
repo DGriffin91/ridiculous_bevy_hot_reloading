@@ -2,6 +2,7 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use proc_macro2::*;
+use proc_macro_crate::{crate_name, FoundCrate};
 use syn::{parse_macro_input, FnArg, ItemFn};
 
 use quote::quote;
@@ -53,12 +54,23 @@ pub fn make_hot_system(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
+    let found_crate = crate_name("ridiculous_bevy_hot_reloading")
+        .expect("ridiculous_bevy_hot_reloading is present in `Cargo.toml`");
+
+    let crate_found = match found_crate {
+        FoundCrate::Itself => quote!(crate),
+        FoundCrate::Name(name) => {
+            let ident = Ident::new(&name, Span::call_site());
+            quote!( #ident)
+        }
+    };
+
     let dyn_func = quote! {
         //#[allow(unused_mut)]
         #vis #fn_token #fn_name #generics( #(#args),*, lib_res: Res<ridiculous_bevy_hot_reloading::bevy_plugin::HotReloadLib>) #return_type  {
             if let Some(lib) = &lib_res.library {
                 unsafe {
-                    let func: libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) #return_type , > =
+                    let func: #crate_found::libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) #return_type , > =
                                            lib.get(#fn_name_orig_code_str.as_bytes()).unwrap();
                     return func(#(#arg_names),*);
                 }
@@ -120,6 +132,17 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
+    let found_crate = crate_name("ridiculous_bevy_hot_reloading")
+        .expect("ridiculous_bevy_hot_reloading is present in `Cargo.toml`");
+
+    let crate_found = match found_crate {
+        FoundCrate::Itself => quote!(crate),
+        FoundCrate::Name(name) => {
+            let ident = Ident::new(&name, Span::call_site());
+            quote!( #ident)
+        }
+    };
+
     let dyn_func = quote! {
         //#[allow(unused_mut)]
         #vis #fn_token #fn_name #generics( #(#args),*) #return_type  {
@@ -154,8 +177,8 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
                             std::fs::copy(lib_path, &hot_lib_path).unwrap();
                         }
 
-                        if let Ok(lib) = libloading::Library::new(hot_lib_path) {
-                            let func: libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) #return_type , > =
+                        if let Ok(lib) = #crate_found::libloading::Library::new(hot_lib_path) {
+                            let func: #crate_found::libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) #return_type , > =
                                                    lib.get(#fn_name_orig_code_str.as_bytes()).unwrap();
                             return func(#(#arg_names),*);
                         }

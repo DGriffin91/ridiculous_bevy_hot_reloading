@@ -10,6 +10,7 @@ syn = {version = "1.0", features = ["extra-traits", "derive", "full"]}
 quote = "1.0"
 proc-macro2 = "1.0"
 libloading = "0.7" 
+proc-macro-crate = "1.2"
 
 [lib]
 proc-macro = true

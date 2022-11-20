@@ -1,8 +1,9 @@
 pub use hot_reloading_macros;
-pub use libloading;
+pub extern crate libloading;
 
 use std::time::UNIX_EPOCH;
 
+/// Only for use with #[make_hot], not #[make_hot_system]
 pub fn lib_updated() -> Option<std::time::SystemTime> {
     if let Ok(lib_path) = std::env::current_exe() {
         let folder = lib_path.parent().unwrap();
@@ -22,6 +23,7 @@ pub fn lib_updated() -> Option<std::time::SystemTime> {
     None
 }
 
+/// Only for use with #[make_hot], not #[make_hot_system]
 pub fn lib_updated_f64() -> Option<f64> {
     if let Some(updated) = lib_updated() {
         if let Ok(t) = updated.duration_since(UNIX_EPOCH) {
@@ -31,6 +33,7 @@ pub fn lib_updated_f64() -> Option<f64> {
     None
 }
 
+/// Only for use with #[make_hot], not #[make_hot_system]
 pub fn lib_hot_updated() -> Option<std::time::SystemTime> {
     if let Ok(lib_path) = std::env::current_exe() {
         let folder = lib_path.parent().unwrap();
@@ -50,6 +53,7 @@ pub fn lib_hot_updated() -> Option<std::time::SystemTime> {
     None
 }
 
+/// Only for use with #[make_hot], not #[make_hot_system]
 pub fn lib_hot_updated_f64() -> Option<f64> {
     if let Some(updated) = lib_hot_updated() {
         if let Ok(t) = updated.duration_since(UNIX_EPOCH) {

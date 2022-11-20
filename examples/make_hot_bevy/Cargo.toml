@@ -2,28 +2,22 @@
 resolver = "2"
 
 [package]
-name = "hot_reload_bevy"
+name = "make_hot_bevy"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "lib_hot_reload_bevy" 
+name = "lib_make_hot_bevy" 
 path = "src/lib.rs"
 crate-type = ["rlib", "dylib"]
 
 [dependencies]
 bevy = { version = "0.9" }
-libloading = "0.7" 
 
 # use "bypass" feature to bypass all hot macros
-ridiculous_bevy_hot_reloading = { version = "*", path = "../..", features = ["bevy"] } 
-
-[build-dependencies]
-anyhow = "1.0"
-cargo_toml = "0.13"
-toml = "0.5"
+ridiculous_bevy_hot_reloading = { version = "*", path = "../..", features = [] } 
 
 # Enable max optimizations for dependencies, but not for our code:
 [profile.dev.package."*"]
