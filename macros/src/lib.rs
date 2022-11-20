@@ -7,6 +7,69 @@ use syn::{parse_macro_input, FnArg, ItemFn};
 use quote::quote;
 
 #[proc_macro_attribute]
+pub fn make_hot_system(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    #[cfg(feature = "bypass")]
+    {
+        return item;
+    }
+    let ast = parse_macro_input!(item as ItemFn);
+
+    let fn_name = &ast.sig.ident;
+
+    let mut args = Vec::new();
+    let mut arg_names = Vec::new();
+    let mut arg_types = Vec::new();
+
+    for arg in ast.sig.inputs {
+        args.push(arg.clone());
+        match arg {
+            FnArg::Receiver(_) => (),
+            FnArg::Typed(a) => {
+                match *a.pat {
+                    syn::Pat::Ident(id) => arg_names.push(id.ident),
+                    _ => (),
+                }
+                arg_types.push(a.ty)
+            }
+        }
+    }
+
+    let return_type = ast.sig.output;
+
+    let fn_name_orig_code_str = &format!("ridiculous_bevy_hot_{}", fn_name);
+
+    let fn_name_orig_code = &Ident::new(fn_name_orig_code_str, Span::call_site());
+
+    let orig_stmts = ast.block.stmts;
+
+    let orig_func = quote! {
+        #[no_mangle] //#[allow(unused_mut)]
+        pub fn #fn_name_orig_code( #(#args),*) #return_type {
+            #(#orig_stmts)*
+        }
+    };
+
+    let dyn_func = quote! {
+        //#[allow(unused_mut)]
+        pub fn #fn_name( #(#args),*, lib_res: Res<ridiculous_bevy_hot_reloading::bevy_plugin::HotReloadLib>) #return_type  {
+            if let Some(lib) = &lib_res.library {
+                unsafe {
+                    let func: libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) #return_type , > =
+                                           lib.get(#fn_name_orig_code_str.as_bytes()).unwrap();
+                    return func(#(#arg_names),*);
+                }
+            }
+            return #fn_name_orig_code(#(#arg_names),*);
+        }
+    };
+
+    TokenStream::from(quote! {
+        #orig_func
+        #dyn_func
+    })
+}
+
+#[proc_macro_attribute]
 pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
     #[cfg(feature = "bypass")]
     {
@@ -43,16 +106,17 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let orig_stmts = ast.block.stmts;
 
     let orig_func = quote! {
-        #[no_mangle]
-        pub fn #fn_name_orig_code(#[allow(unused_mut)] #(#args),*) #return_type {
+        #[no_mangle] //#[allow(unused_mut)]
+        pub fn #fn_name_orig_code( #(#args),*) #return_type {
             #(#orig_stmts)*
         }
     };
 
     let dyn_func = quote! {
-        pub fn #fn_name(#[allow(unused_mut)] #(#args),*) #return_type  {
+        //#[allow(unused_mut)]
+        pub fn #fn_name( #(#args),*) #return_type  {
             unsafe {
-                if let Ok(mut lib_path) = std::env::current_exe() {
+                if let Ok(lib_path) = std::env::current_exe() {
                     let folder = lib_path.parent().unwrap();
                     let stem = lib_path.file_stem().unwrap();
                     let mod_stem = format!("lib_{}", stem.to_str().unwrap());

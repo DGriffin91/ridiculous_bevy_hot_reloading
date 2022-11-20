@@ -1,10 +1,40 @@
 # Ridiculous bevy hot reloading
 
-```
-cargo watch -w src -x 'build --lib'
+Usage with `bevy_plugin` feature.
+```rs
+app.add_plugin(HotReload { auto_watch: true });
+
+[...]
+
+#[make_hot_system]
+pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
+    for mut transform in &mut query {
+        transform.rotate_x(time.delta_seconds() * 1.0);
+    }
+}
 ```
 
-Or optionally
+[cargo-watch](https://crates.io/crates/cargo-watch) must be installed to use auto_watch.
+
+Use `make_hot_system` with bevy systems, and `make_hot` with any function. 
+
+Note: `make_hot` loads and unloads the dynamic library with every call and is much less efficient than using `make_hot_system` with the `HotReload` bevy plugin.
+
+Setup Cargo.toml for dylib:
+```
+[package]
+name = "your_game"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "lib_your_game" 
+path = "src/lib.rs"
+crate-type = ["rlib", "dylib"]
+```
+*Currenly this naming scheme with "lib_" prefix is required.*
+
+Manually use cargo watch with (bevy/dynamic optional):
 ```
 cargo watch -w src -x 'build --lib --features bevy/dynamic'
 ```
