@@ -34,6 +34,10 @@ pub fn make_hot_system(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     }
 
+    let generics = &ast.sig.generics;
+    let fn_token = &ast.sig.fn_token;
+    let vis = &ast.vis;
+
     let return_type = ast.sig.output;
 
     let fn_name_orig_code_str = &format!("ridiculous_bevy_hot_{}", fn_name);
@@ -44,14 +48,14 @@ pub fn make_hot_system(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let orig_func = quote! {
         #[no_mangle] //#[allow(unused_mut)]
-        pub fn #fn_name_orig_code( #(#args),*) #return_type {
+        #vis #fn_token #fn_name_orig_code #generics( #(#args),*) #return_type {
             #(#orig_stmts)*
         }
     };
 
     let dyn_func = quote! {
         //#[allow(unused_mut)]
-        pub fn #fn_name( #(#args),*, lib_res: Res<ridiculous_bevy_hot_reloading::bevy_plugin::HotReloadLib>) #return_type  {
+        #vis #fn_token #fn_name #generics( #(#args),*, lib_res: Res<ridiculous_bevy_hot_reloading::bevy_plugin::HotReloadLib>) #return_type  {
             if let Some(lib) = &lib_res.library {
                 unsafe {
                     let func: libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) #return_type , > =
@@ -97,6 +101,10 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     }
 
+    let generics = &ast.sig.generics;
+    let fn_token = &ast.sig.fn_token;
+    let vis = &ast.vis;
+
     let return_type = ast.sig.output;
 
     let fn_name_orig_code_str = &format!("ridiculous_bevy_hot_{}", fn_name);
@@ -107,14 +115,14 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let orig_func = quote! {
         #[no_mangle] //#[allow(unused_mut)]
-        pub fn #fn_name_orig_code( #(#args),*) #return_type {
+        #vis #fn_token #fn_name_orig_code #generics( #(#args),*) #return_type {
             #(#orig_stmts)*
         }
     };
 
     let dyn_func = quote! {
         //#[allow(unused_mut)]
-        pub fn #fn_name( #(#args),*) #return_type  {
+        #vis #fn_token #fn_name #generics( #(#args),*) #return_type  {
             unsafe {
                 if let Ok(lib_path) = std::env::current_exe() {
                     let folder = lib_path.parent().unwrap();
