@@ -20,11 +20,6 @@ libloading = "0.7"
 # use "bypass" feature to bypass all hot macros
 ridiculous_bevy_hot_reloading = { version = "*", path = "../..", features = [] } 
 
-[build-dependencies]
-anyhow = "1.0"
-cargo_toml = "0.13"
-toml = "0.5"
-
 # Enable max optimizations for dependencies, but not for our code:
 [profile.dev.package."*"]
 opt-level = 3
