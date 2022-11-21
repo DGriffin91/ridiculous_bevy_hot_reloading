@@ -130,6 +130,7 @@ pub mod bevy_plugin {
                 child = Some(
                     std::process::Command::new("cargo")
                         .arg("watch")
+                        .arg("--postpone")
                         .arg("--watch-when-idle")
                         .arg("-w")
                         .arg("src")
