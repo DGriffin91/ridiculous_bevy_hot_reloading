@@ -36,6 +36,7 @@ pub fn make_hot_system(_attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 
     let generics = &ast.sig.generics;
+    let where_clause = &ast.sig.generics.where_clause;
     let fn_token = &ast.sig.fn_token;
     let vis = &ast.vis;
 
@@ -49,7 +50,7 @@ pub fn make_hot_system(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let orig_func = quote! {
         #[no_mangle] //#[allow(unused_mut)]
-        #vis #fn_token #fn_name_orig_code #generics( #(#args),*) #return_type {
+        #vis #fn_token #fn_name_orig_code #generics( #(#args),*) #return_type #where_clause {
             #(#orig_stmts)*
         }
     };
@@ -68,7 +69,7 @@ pub fn make_hot_system(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let dyn_func = quote! {
         #[allow(unused_mut)] // added because rust analyzer will complain about the mut on `mut query: Query<`
         #vis #fn_token #fn_name #generics( #(#args),*,
-        hot_reload_lib_internal_use_only: Res<ridiculous_bevy_hot_reloading::bevy_plugin::HotReloadLibInternalUseOnly>) #return_type  {
+        hot_reload_lib_internal_use_only: Res<ridiculous_bevy_hot_reloading::bevy_plugin::HotReloadLibInternalUseOnly>) #return_type #where_clause {
             if let Some(lib) = &hot_reload_lib_internal_use_only.library {
                 unsafe {
                     let func: #crate_found::libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) #return_type , > =
@@ -115,6 +116,7 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 
     let generics = &ast.sig.generics;
+    let where_clause = &ast.sig.generics.where_clause;
     let fn_token = &ast.sig.fn_token;
     let vis = &ast.vis;
 
@@ -128,7 +130,7 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let orig_func = quote! {
         #[no_mangle] //#[allow(unused_mut)]
-        #vis #fn_token #fn_name_orig_code #generics( #(#args),*) #return_type {
+        #vis #fn_token #fn_name_orig_code #generics( #(#args),*) #return_type #where_clause {
             #(#orig_stmts)*
         }
     };
@@ -146,7 +148,7 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let dyn_func = quote! {
         //#[allow(unused_mut)]
-        #vis #fn_token #fn_name #generics( #(#args),*) #return_type  {
+        #vis #fn_token #fn_name #generics( #(#args),*) #return_type #where_clause {
             unsafe {
                 if let Ok(lib_path) = std::env::current_exe() {
                     let folder = lib_path.parent().unwrap();
