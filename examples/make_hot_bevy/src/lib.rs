@@ -6,7 +6,7 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
-use ridiculous_bevy_hot_reloading::{hot_reloading_macros::make_hot, HotReloadInfo};
+use ridiculous_bevy_hot_reloading::{hot_reloading_macros::make_hot, HotReload, HotReloadEvent};
 
 /// A marker component for our shapes so we can query them separately from the ground plane
 #[derive(Component)]
@@ -88,15 +88,18 @@ pub fn rotate2(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
 #[make_hot]
 pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
     for mut transform in &mut query {
-        transform.rotate_x(time.delta_seconds() * 1.0);
+        transform.rotate_x(time.delta_seconds() * 10.0);
     }
 }
 
-// lib_hot_updated could be used to run some code only on update
+// hot_reload.updated_this_frame or HotReloadEvent can be used to run some code only on update
 #[make_hot]
-pub fn print_last_update(hot: Res<HotReloadInfo>) {
-    if hot.updated_this_frame {
+pub fn print_last_update(hot_reload: Res<HotReload>, mut hot_event: EventReader<HotReloadEvent>) {
+    if hot_reload.updated_this_frame {
         println!("HOT RELOAD THIS FRAME");
+    }
+    for e in hot_event.iter() {
+        dbg!(e);
     }
 }
 
