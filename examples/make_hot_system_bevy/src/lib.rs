@@ -7,7 +7,7 @@ use bevy::{
 };
 
 use ridiculous_bevy_hot_reloading::{
-    bevy_plugin::HotReloadLib, hot_reloading_macros::make_hot_system,
+    bevy_plugin::HotReloadInfo, hot_reloading_macros::make_hot_system,
 };
 
 /// A marker component for our shapes so we can query them separately from the ground plane
@@ -96,7 +96,7 @@ pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
 
 // lib_hot_updated could be used to run some code only on update
 
-pub fn print_last_update(hot: Res<HotReloadLib>) {
+pub fn print_last_update(hot: Res<HotReloadInfo>) {
     if hot.updated_this_frame {
         println!("HOT RELOAD THIS FRAME");
     }

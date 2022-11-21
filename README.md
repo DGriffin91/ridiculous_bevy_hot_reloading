@@ -77,7 +77,8 @@ pub fn ridiculous_bevy_hot_rotate(mut query: Query<&mut Transform, With<Shape>>,
 }
 
 pub fn rotate(
-    mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>, lib_res: Res<HotReloadLib>,
+    mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>, 
+    hot_reload_lib_internal_use_only: Res<HotReloadLibInternalUseOnly>,
 ) {
     if let Some(lib) = &lib_res.library {
         unsafe {

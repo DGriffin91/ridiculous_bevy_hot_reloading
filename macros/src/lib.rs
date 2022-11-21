@@ -67,8 +67,9 @@ pub fn make_hot_system(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let dyn_func = quote! {
         //#[allow(unused_mut)]
-        #vis #fn_token #fn_name #generics( #(#args),*, lib_res: Res<ridiculous_bevy_hot_reloading::bevy_plugin::HotReloadLib>) #return_type  {
-            if let Some(lib) = &lib_res.library {
+        #vis #fn_token #fn_name #generics( #(#args),*,
+        hot_reload_lib_internal_use_only: Res<ridiculous_bevy_hot_reloading::bevy_plugin::HotReloadLibInternalUseOnly>) #return_type  {
+            if let Some(lib) = &hot_reload_lib_internal_use_only.library {
                 unsafe {
                     let func: #crate_found::libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) #return_type , > =
                                            lib.get(#fn_name_orig_code_str.as_bytes()).unwrap();

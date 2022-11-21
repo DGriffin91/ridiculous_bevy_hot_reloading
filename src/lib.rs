@@ -70,8 +70,17 @@ pub mod bevy_plugin {
     use bevy::{app::AppExit, prelude::*, window::WindowCloseRequested};
     use libloading::Library;
 
+    /// Get info about HotReload state.
     #[derive(Resource, Default)]
-    pub struct HotReloadLib {
+    pub struct HotReloadInfo {
+        pub updated_this_frame: bool,
+        pub last_update_time: f64,
+    }
+
+    /// Only for HotReload internal use. Must be pub because it is
+    /// inserted as an arg on systems with #[make_hot_system]
+    #[derive(Resource, Default)]
+    pub struct HotReloadLibInternalUseOnly {
         pub library: Option<Library>,
         pub updated_this_frame: bool,
         pub last_update_time: f64,
@@ -134,11 +143,12 @@ pub mod bevy_plugin {
             // TODO move as early as possible
             app.add_system_to_stage(CoreStage::PreUpdate, update_lib)
                 .add_system_to_stage(CoreStage::PostUpdate, clean_up_watch)
-                .insert_resource(HotReloadLib {
+                .insert_resource(HotReloadLibInternalUseOnly {
                     cargo_watch_child: child,
                     library_name: self.library_name.clone(),
                     ..default()
-                });
+                })
+                .insert_resource(HotReloadInfo::default());
         }
     }
 
@@ -146,7 +156,10 @@ pub mod bevy_plugin {
         t.duration_since(UNIX_EPOCH).unwrap().as_secs_f64()
     }
 
-    fn update_lib(mut lib_res: ResMut<HotReloadLib>) {
+    fn update_lib(
+        mut lib_res: ResMut<HotReloadLibInternalUseOnly>,
+        mut lib_info: ResMut<HotReloadInfo>,
+    ) {
         lib_res.updated_this_frame = false;
         if let Ok(lib_path) = std::env::current_exe() {
             let folder = lib_path.parent().unwrap();
@@ -190,12 +203,14 @@ pub mod bevy_plugin {
                 }
             }
         }
+        lib_info.updated_this_frame = lib_res.updated_this_frame;
+        lib_info.last_update_time = lib_res.last_update_time;
     }
 
     fn clean_up_watch(
         app_exit: EventReader<AppExit>,
         window_close: EventReader<WindowCloseRequested>,
-        mut lib_res: ResMut<HotReloadLib>,
+        mut lib_res: ResMut<HotReloadLibInternalUseOnly>,
     ) {
         if !app_exit.is_empty() || !window_close.is_empty() {
             if let Some(child) = &mut lib_res.cargo_watch_child {
