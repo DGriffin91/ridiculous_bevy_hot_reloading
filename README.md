@@ -24,7 +24,7 @@ cargo run
 [cargo-watch](https://crates.io/crates/cargo-watch) must be installed to use auto_watch.
 
 ### Warning: There are a significant number of ways that hot reloading can result in undefined behavior. When hot reloading, do not change any function signatures or structs.
-*It is potentially possible to change structs, but only if they are exclusively used in the hot reloaded code paths and are not referenced or stored anywhere else. (including in `Local<>`)*
+*It is potentially possible to change structs and non-system function signatures, but only if they are exclusively used in the hot reloaded code paths and are not referenced or stored anywhere else. (including in `Local<>`)*
 
 
 
