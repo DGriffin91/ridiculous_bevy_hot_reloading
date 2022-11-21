@@ -5,9 +5,8 @@ use bevy::{
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
-use ridiculous_bevy_hot_reloading::{
-    hot_reloading_macros::make_hot, lib_hot_updated_f64, lib_updated_f64,
-};
+
+use ridiculous_bevy_hot_reloading::{hot_reloading_macros::make_hot, HotReloadInfo};
 
 /// A marker component for our shapes so we can query them separately from the ground plane
 #[derive(Component)]
@@ -81,7 +80,7 @@ pub fn setup(
 #[make_hot]
 pub fn rotate2(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
     for mut transform in &mut query {
-        let rot = Quat::from_rotation_y(0.1 * time.delta_seconds());
+        let rot = Quat::from_rotation_y(1.1 * time.delta_seconds());
         transform.translate_around(vec3(0.0, 0.0, 0.0), rot);
     }
 }
@@ -94,17 +93,10 @@ pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
 }
 
 // lib_hot_updated could be used to run some code only on update
-
-pub fn print_last_update(mut update_prev: Local<(f64, f64)>) {
-    let lib_prev = lib_updated_f64().unwrap();
-    if lib_prev > update_prev.0 {
-        println!("lib_updated {:?}", lib_prev);
-        update_prev.0 = lib_prev;
-    }
-    let lib_prev = lib_hot_updated_f64().unwrap();
-    if lib_prev > update_prev.1 {
-        println!("lib_hot_updated {:?}", lib_prev);
-        update_prev.1 = lib_prev;
+#[make_hot]
+pub fn print_last_update(hot: Res<HotReloadInfo>) {
+    if hot.updated_this_frame {
+        println!("HOT RELOAD THIS FRAME");
     }
 }
 

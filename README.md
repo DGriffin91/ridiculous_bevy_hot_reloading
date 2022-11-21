@@ -1,6 +1,6 @@
 # Ridiculous bevy hot reloading
 
-# `#[make_hot_system]`
+# `#[make_hot]`
 
 Use with `features = ["bevy_plugin"]`.
 ```rs
@@ -9,7 +9,7 @@ app.add_plugin(HotReload::default());
 
 [...]
 
-#[make_hot_system]
+#[make_hot]
 pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
     for mut transform in &mut query {
         transform.rotate_x(time.delta_seconds() * 1.0);
@@ -45,17 +45,17 @@ crate-type = ["rlib", "dylib"]
 ridiculous_bevy_hot_reloading = { git = "https://github.com/DGriffin91/ridiculous_bevy_hot_reloading", 
                                   features = ["bevy_plugin"] } 
 ```
-*This naming scheme with "lib_" prefix is default and required for `#[make_hot]` but for `#[make_hot_system]` it can be configured with HotReload::library_name.*
+*This naming scheme with "lib_" prefix can be configured with HotReload::library_name.*
 
 
 
 
 *note: running initially with `cargo run --features bevy/dynamic` does not work because the executable is actively using the lib with the dynamic feature. Hopefully a way around this is eventually found. This could work if cargo watch builds the lib using a different name or to a different path.*
 
-## How `#[make_hot_system]` works
+## How `#[make_hot]` works
 Given this rotate system as input:
 ```rs
-#[make_hot_system]
+#[make_hot]
 pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
     for mut transform in &mut query {
         transform.rotate_x(time.delta_seconds() * 1.0);
@@ -63,10 +63,10 @@ pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
 }
 ```
 
-`#[make_hot_system]` replaces contents of the rotate function with one that will try to call the function from the dynamic library. If the library is not loaded it will call the original (but renamed) function. To make this possible, it adds the `lib_res: Res<HotReloadLib>` argument to the rotate system.
+`#[make_hot]` replaces contents of the rotate function with one that will try to call the function from the dynamic library. If the library is not loaded it will call the original (but renamed) function. To make this possible, it adds the `lib_res: Res<HotReloadLib>` argument to the rotate system.
 
 ```rs
-// Recursive expansion of make_hot_system! macro
+// Recursive expansion of make_hot! macro
 // ==============================================
 
 #[no_mangle]
@@ -95,32 +95,3 @@ pub fn rotate(
 
 The `HotReload` plugin rebuilds the code using `cargo-watch` in a subprocess. And handles refreshing the loaded library. When the libray is refreshed, a copy is made. This copy is then loaded, that allows cargo to build and output the library while the previous version is still in use.
 
-# `#[make_hot]`
-
-Use `#[make_hot_system]` with bevy systems, and `#[make_hot]` with any function. 
-
-Note: `#[make_hot]` loads and unloads the dynamic library with every call and is much less efficient than using `#[make_hot_system]` with the `HotReload` bevy plugin.
-
-Manually using cargo watch is required for `#[make_hot]` (bevy/dynamic is optional):
-```
-cargo watch -w src -x 'build --lib --features bevy/dynamic'
-```
-```
-cargo run
-```
-Setup Cargo.toml for dylib:
-```toml
-[package]
-name = "your_app"
-version = "0.1.0"
-edition = "2021"
-
-[lib]
-name = "lib_your_app" 
-path = "src/lib.rs"
-crate-type = ["rlib", "dylib"]
-
-[dependencies]
-# use "bypass" feature to bypass all hot macros
-ridiculous_bevy_hot_reloading = { git = "https://github.com/DGriffin91/ridiculous_bevy_hot_reloading" } 
-```
