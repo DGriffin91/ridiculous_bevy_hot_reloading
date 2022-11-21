@@ -66,7 +66,7 @@ pub fn make_hot_system(_attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     let dyn_func = quote! {
-        //#[allow(unused_mut)]
+        #[allow(unused_mut)] // added because rust analyzer will complain about the mut on `mut query: Query<`
         #vis #fn_token #fn_name #generics( #(#args),*,
         hot_reload_lib_internal_use_only: Res<ridiculous_bevy_hot_reloading::bevy_plugin::HotReloadLibInternalUseOnly>) #return_type  {
             if let Some(lib) = &hot_reload_lib_internal_use_only.library {

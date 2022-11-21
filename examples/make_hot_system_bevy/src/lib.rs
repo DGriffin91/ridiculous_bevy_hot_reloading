@@ -95,7 +95,7 @@ pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
 }
 
 // lib_hot_updated could be used to run some code only on update
-
+#[make_hot_system]
 pub fn print_last_update(hot: Res<HotReloadInfo>) {
     if hot.updated_this_frame {
         println!("HOT RELOAD THIS FRAME");

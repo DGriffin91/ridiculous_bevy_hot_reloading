@@ -76,6 +76,7 @@ pub fn ridiculous_bevy_hot_rotate(mut query: Query<&mut Transform, With<Shape>>,
     }
 }
 
+#[allow(unused_mut)] // added because rust analyzer will complain about the mut on `mut query: Query<`
 pub fn rotate(
     mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>, 
     hot_reload_lib_internal_use_only: Res<HotReloadLibInternalUseOnly>,
