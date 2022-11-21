@@ -54,9 +54,15 @@ impl Default for HotReload {
 impl Plugin for HotReload {
     fn build(&self, app: &mut App) {
         let mut child = None;
+
+        let release_mode = false;
+        #[cfg(not(debug_assertions))]
+        let release_mode = true;
+
         if self.auto_watch {
             let build_cmd = format!(
-                "build --lib {}",
+                "build --lib {} {}",
+                if release_mode { "--release" } else { "" },
                 if self.bevy_dynamic {
                     "--features bevy/dynamic"
                 } else {

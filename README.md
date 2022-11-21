@@ -2,7 +2,7 @@
 
 # `#[make_hot]`
 
-Use with `features = ["bevy_plugin"]`.
+Use with bevy 0.9
 ```rs
 //Default has auto_watch: true, bevy_dynamic: true, and lib_ prefix
 app.add_plugin(HotReload::default());
@@ -42,10 +42,9 @@ crate-type = ["rlib", "dylib"]
 
 [dependencies]
 # use "bypass" feature to bypass all hot macros
-ridiculous_bevy_hot_reloading = { git = "https://github.com/DGriffin91/ridiculous_bevy_hot_reloading", 
-                                  features = ["bevy_plugin"] } 
+ridiculous_bevy_hot_reloading = { git = "https://github.com/DGriffin91/ridiculous_bevy_hot_reloading" } 
 ```
-*This naming scheme with "lib_" prefix can be configured with HotReload::library_name.*
+*This naming scheme with "lib_" prefix is default but can be configured with HotReload::library_name.*
 
 
 
