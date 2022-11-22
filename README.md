@@ -80,7 +80,7 @@ pub fn rotate(
     mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>, 
     hot_reload_lib_internal_use_only: Res<HotReloadLibInternalUseOnly>,
 ) {
-    if let Some(lib) = &lib_res.library {
+    if let Some(lib) = &hot_reload_lib_internal_use_only.library {
         unsafe {
             let func: ridiculous_bevy_hot_reloading::libloading::Symbol<
                 unsafe extern "C" fn(Query<&mut Transform, With<Shape>>, Res<Time>),
