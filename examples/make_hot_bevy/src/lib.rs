@@ -10,6 +10,8 @@ use ridiculous_bevy_hot_reloading::{
     hot_reloading_macros::make_hot, HotReload, HotReloadEvent, HotReloadPlugin,
 };
 
+/// #[no_mangle] Needed so libloading can find this entry point
+#[no_mangle]
 pub fn main() {
     let mut app = App::new();
 
@@ -19,12 +21,7 @@ pub fn main() {
         .add_system(rotate2)
         .add_plugin(HotReloadPlugin {
             auto_watch: true,
-            /// Needs to be set to false for TypeIds to be consistent between builds.
-            /// If the main app was built with bevy/dynamic, cargo-watch could also.
-            /// But if the app is built with bevy/dynamic, then cargo-watch can't
-            /// overwrite the lib file. Still need to figure out a workaround for
-            /// this issue.
-            bevy_dynamic: false,
+            bevy_dynamic: true,
             ..default()
         });
 
@@ -110,7 +107,7 @@ pub fn rotate2(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
 #[make_hot]
 pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
     for mut transform in &mut query {
-        transform.rotate_x(time.delta_seconds() * 10.0);
+        transform.rotate_x(time.delta_seconds() * 1.0);
     }
 }
 

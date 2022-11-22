@@ -14,7 +14,7 @@ path = "src/lib.rs"
 crate-type = ["rlib", "dylib"]
 
 [dependencies]
-bevy = { version = "0.9" }
+bevy = { version = "0.9", features = ["dynamic"] }
 
 # use "bypass" feature to bypass all hot macros
 ridiculous_bevy_hot_reloading = { version = "*", path = "../.." } 
