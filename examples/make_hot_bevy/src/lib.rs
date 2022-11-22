@@ -19,6 +19,7 @@ pub fn main() {
         .add_startup_system(setup)
         .add_system(rotate)
         .add_system(rotate2)
+        .add_system(print_last_update)
         .add_plugin(HotReloadPlugin {
             auto_watch: true,
             bevy_dynamic: true,

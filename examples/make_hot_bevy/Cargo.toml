@@ -16,7 +16,7 @@ crate-type = ["rlib", "dylib"]
 [dependencies]
 bevy = { version = "0.9", features = ["dynamic"] }
 
-# use "bypass" feature to bypass all hot macros
+# use features = ["bypass"] to bypass all hot macros
 ridiculous_bevy_hot_reloading = { version = "*", path = "../.." } 
 
 # Enable max optimizations for dependencies, but not for our code:

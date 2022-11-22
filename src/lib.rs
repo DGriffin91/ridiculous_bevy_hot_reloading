@@ -69,6 +69,17 @@ impl Default for HotReloadPlugin {
 
 impl Plugin for HotReloadPlugin {
     fn build(&self, app: &mut App) {
+        #[cfg(feature = "bypass")]
+        {
+            app.add_event::<HotReloadEvent>()
+                .insert_resource(HotReload {
+                    updated_this_frame: false,
+                    disable_reload: true,
+                    ..default()
+                });
+            return;
+        }
+
         let mut child = None;
 
         let release_mode = false;
