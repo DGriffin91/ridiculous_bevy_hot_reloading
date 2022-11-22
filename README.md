@@ -5,7 +5,7 @@
 Use with bevy 0.9
 ```rs
 //Default has auto_watch: true, bevy_dynamic: true, and lib_ prefix
-app.add_plugin(HotReload::default());
+app.add_plugin(HotReloadPlugin::default());
 
 [...]
 
@@ -62,7 +62,7 @@ pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
 }
 ```
 
-`#[make_hot]` replaces contents of the rotate function with one that will try to call the function from the dynamic library. If the library is not loaded it will call the original (but renamed) function. To make this possible, it adds the `lib_res: Res<HotReloadLib>` argument to the rotate system.
+`#[make_hot]` replaces contents of the rotate function with one that will try to call the function from the dynamic library. If the library is not loaded it will call the original (but renamed) function. To make this possible, it adds the `hot_reload_lib_internal_use_only: Res<HotReloadLibInternalUseOnly>` argument to the rotate system.
 
 ```rs
 // Recursive expansion of make_hot! macro
@@ -92,5 +92,5 @@ pub fn rotate(
 }
 ```
 
-The `HotReload` plugin rebuilds the code using `cargo-watch` in a subprocess. And handles refreshing the loaded library. When the libray is refreshed, a copy is made. This copy is then loaded, that allows cargo to build and output the library while the previous version is still in use.
+`HotReloadPlugin` rebuilds the code using `cargo-watch` in a subprocess. And handles refreshing the loaded library. When the libray is refreshed, a copy is made. This copy is then loaded, that allows cargo to build and output the library while the previous version is still in use.
 
