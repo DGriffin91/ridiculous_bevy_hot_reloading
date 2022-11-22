@@ -18,20 +18,60 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let fn_name = &ast.sig.ident;
 
     let mut args = Vec::new();
+    let mut args_hot_func = Vec::new();
     let mut arg_names = Vec::new();
     let mut arg_types = Vec::new();
 
-    for arg in ast.sig.inputs {
+    let mut hot_arg_names = Vec::new();
+    let mut hot_arg_types = Vec::new();
+
+    for arg in &ast.sig.inputs {
         args.push(arg.clone());
+        args_hot_func.push(arg.clone());
         match arg {
             FnArg::Receiver(_) => (),
-            FnArg::Typed(a) => {
-                match *a.pat {
-                    syn::Pat::Ident(id) => arg_names.push(id.ident),
+            FnArg::Typed(pt) => {
+                let mut pt = pt.clone();
+                match *pt.pat {
+                    syn::Pat::Ident(ref mut id) => {
+                        arg_names.push(id.ident.clone());
+                        let name = id.ident.clone();
+                        hot_arg_names.push(quote! { #name });
+                    }
                     _ => (),
                 }
-                arg_types.push(a.ty)
+                arg_types.push(pt.ty.clone())
             }
+        }
+    }
+
+    // Below deals with converting `mut commands: Commands` to `commands: &mut Commands`
+    for (idx, arg) in args_hot_func.iter_mut().enumerate() {
+        match arg.clone() {
+            FnArg::Receiver(_) => (),
+            FnArg::Typed(a) => match &*a.ty {
+                syn::Type::Path(p) => {
+                    if p.path.segments.len() == 1 {
+                        if p.path.segments[0].ident == "Commands" {
+                            let name = &mut hot_arg_names[idx];
+                            let tok: TokenStream = quote! { #name : &mut Commands }.into();
+                            *arg = parse_macro_input!(tok as FnArg);
+                            *name = quote! {&mut #name};
+                            break;
+                        }
+                    } else {
+                        continue;
+                    }
+                }
+                _ => continue,
+            },
+        }
+    }
+
+    for arg in &args_hot_func {
+        match arg {
+            FnArg::Receiver(_) => (),
+            FnArg::Typed(a) => hot_arg_types.push(a.ty.clone()),
         }
     }
 
@@ -50,7 +90,7 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let orig_func = quote! {
         #[no_mangle] //#[allow(unused_mut)]
-        #vis #fn_token #fn_name_orig_code #generics( #(#args),*) #return_type #where_clause {
+        #vis #fn_token #fn_name_orig_code #generics( #(#args_hot_func),*) #return_type #where_clause {
             #(#orig_stmts)*
         }
     };
@@ -72,12 +112,12 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
         hot_reload_lib_internal_use_only: Res<ridiculous_bevy_hot_reloading::HotReloadLibInternalUseOnly>) #return_type #where_clause {
             if let Some(lib) = &hot_reload_lib_internal_use_only.library {
                 unsafe {
-                    let func: #crate_found::libloading::Symbol<unsafe extern "C" fn (#(#arg_types),*) #return_type , > =
+                    let func: #crate_found::libloading::Symbol<unsafe extern "C" fn (#(#hot_arg_types),*) #return_type , > =
                                            lib.get(#fn_name_orig_code_str.as_bytes()).unwrap();
-                    return func(#(#arg_names),*);
+                    return func(#(#hot_arg_names),*);
                 }
             }
-            return #fn_name_orig_code(#(#arg_names),*);
+            return #fn_name_orig_code(#(#hot_arg_names),*);
         }
     };
 
