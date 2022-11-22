@@ -1,15 +1,4 @@
-use bevy::prelude::*;
-use lib_make_hot_bevy::{print_last_update, rotate, rotate2, setup};
-use ridiculous_bevy_hot_reloading::HotReloadPlugin;
-
+// Everything needs to be in the library for the TypeIds to be consistent between builds.
 fn main() {
-    App::new()
-        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        .add_startup_system(setup)
-        .add_system(rotate)
-        .add_system(rotate2)
-        .add_system(print_last_update)
-        //Default has auto_watch: true, bevy_dynamic: true, and lib_ prefix
-        .add_plugin(HotReloadPlugin::default())
-        .run();
+    lib_make_hot_bevy::main()
 }

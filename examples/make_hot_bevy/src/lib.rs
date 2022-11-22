@@ -6,8 +6,30 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
-use ridiculous_bevy_hot_reloading::{hot_reloading_macros::make_hot, HotReload, HotReloadEvent};
+use ridiculous_bevy_hot_reloading::{
+    hot_reloading_macros::make_hot, HotReload, HotReloadEvent, HotReloadPlugin,
+};
 
+pub fn main() {
+    let mut app = App::new();
+
+    app.add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .add_startup_system(setup)
+        .add_system(rotate)
+        .add_system(rotate2)
+        .add_plugin(HotReloadPlugin {
+            auto_watch: true,
+            /// Needs to be set to false for TypeIds to be consistent between builds.
+            /// If the main app was built with bevy/dynamic, cargo-watch could also.
+            /// But if the app is built with bevy/dynamic, then cargo-watch can't
+            /// overwrite the lib file. Still need to figure out a workaround for
+            /// this issue.
+            bevy_dynamic: false,
+            ..default()
+        });
+
+    app.run();
+}
 /// A marker component for our shapes so we can query them separately from the ground plane
 #[derive(Component)]
 pub struct Shape;

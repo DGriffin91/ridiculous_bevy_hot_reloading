@@ -180,7 +180,7 @@ fn update_lib(
 // 1000% cursed. Need to make the actual IoTaskPool accessible from loaded lib (and probably other globals too)
 #[no_mangle]
 fn set_task_pool() {
-    bevy::tasks::IoTaskPool::init(|| Default::default());
+    bevy::tasks::IoTaskPool::init(Default::default);
 }
 
 fn clean_up_watch(
