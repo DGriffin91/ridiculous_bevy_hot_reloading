@@ -1,5 +1,7 @@
 # Ridiculous bevy hot reloading
 
+This crate is currently very experimental.
+
 # `#[make_hot]`
 
 Use with bevy 0.9
