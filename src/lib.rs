@@ -82,9 +82,12 @@ impl Plugin for HotReloadPlugin {
         #[cfg(not(debug_assertions))]
         let release_mode = true;
 
+        let library_paths = LibPathSet::new(self.library_name.clone()).unwrap();
+
         if self.auto_watch {
             let build_cmd = format!(
-                "build --lib {} {}",
+                "build --lib --target-dir {} {} {}",
+                library_paths.folder.parent().unwrap().to_string_lossy(),
                 if release_mode { "--release" } else { "" },
                 if self.bevy_dynamic {
                     "--features bevy/dynamic"
@@ -117,7 +120,7 @@ impl Plugin for HotReloadPlugin {
                 updated_this_frame: false,
                 // Using 1 second ago so to trigger lib load immediately instead of in 1 second
                 last_update_time: Instant::now().checked_sub(Duration::from_secs(1)).unwrap(),
-                library_paths: LibPathSet::new(self.library_name.clone()).unwrap(),
+                library_paths,
             })
             .insert_resource(HoldTypeId(TypeId::of::<HoldTypeId>()))
             .insert_resource(HotReload::default());
