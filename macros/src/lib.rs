@@ -117,6 +117,7 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     return func(#(#hot_arg_names),*);
                 }
             }
+            //panic!("Could not run lib {}", #fn_name_orig_code_str);
             return #fn_name_orig_code(#(#hot_arg_names),*);
         }
     };

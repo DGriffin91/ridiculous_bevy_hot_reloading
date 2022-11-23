@@ -170,10 +170,7 @@ fn update_lib(
             if hot_reload_int.library.is_none() {
                 unsafe {
                     if let Ok(lib) = libloading::Library::new(hot_lib_path) {
-                        // 1000% cursed. Need to make the actual IoTaskPool accessible from loaded lib (and probably other globals too)
-                        let func: libloading::Symbol<unsafe extern "C" fn()> =
-                            lib.get("set_task_pool".as_bytes()).unwrap();
-                        func();
+                        // TODO set globals like IoTaskPool here
 
                         hot_reload_int.library = Some(lib);
                         hot_reload_int.updated_this_frame = true;
@@ -188,12 +185,6 @@ fn update_lib(
     }
     hot_reload.updated_this_frame = hot_reload_int.updated_this_frame;
     hot_reload.last_update_time = hot_reload_int.last_update_time;
-}
-
-// 1000% cursed. Need to make the actual IoTaskPool accessible from loaded lib (and probably other globals too)
-#[no_mangle]
-fn set_task_pool() {
-    bevy::tasks::IoTaskPool::init(Default::default);
 }
 
 fn clean_up_watch(
