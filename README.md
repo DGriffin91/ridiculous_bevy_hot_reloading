@@ -63,12 +63,11 @@ pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
 }
 ```
 
-`#[make_hot]` replaces contents of the rotate function with one that will try to call the function from the dynamic library. If the library is not loaded it will call the original (but renamed) function. To make this possible, it adds the `hot_reload_lib_internal_use_only: Res<HotReloadLibInternalUseOnly>` argument to the rotate system.
+`#[make_hot]` replaces contents of the rotate function with one that will try to call the function from the dynamic library. To make this possible, it adds the `hot_reload_lib_internal_use_only: Res<HotReloadLibInternalUseOnly>` argument to the rotate system.
 
 ```rs
 // Recursive expansion of make_hot! macro
 // ==============================================
-
 #[no_mangle]
 pub fn ridiculous_bevy_hot_rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
     for mut transform in &mut query {
@@ -78,18 +77,26 @@ pub fn ridiculous_bevy_hot_rotate(mut query: Query<&mut Transform, With<Shape>>,
 
 #[allow(unused_mut)] // added because rust analyzer will complain about the mut on `mut query: Query<`
 pub fn rotate(
-    mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>, 
+    mut query: Query<&mut Transform, With<Shape>>,
+    time: Res<Time>,
     hot_reload_lib_internal_use_only: Res<HotReloadLibInternalUseOnly>,
 ) {
     if let Some(lib) = &hot_reload_lib_internal_use_only.library {
         unsafe {
-            let func: ridiculous_bevy_hot_reloading::libloading::Symbol<
+            let func: libloading::Symbol<
                 unsafe extern "C" fn(Query<&mut Transform, With<Shape>>, Res<Time>),
-            > = lib.get("ridiculous_bevy_hot_rotate".as_bytes()).unwrap();
+            > = lib
+                .get("ridiculous_bevy_hot_rotate".as_bytes())
+                .unwrap_or_else(|_| {
+                    panic!(
+                        "Can't find required function {}",
+                        "ridiculous_bevy_hot_rotate"
+                    )
+                });
             return func(query, time);
         }
     }
-    return ridiculous_bevy_hot_rotate(query, time);
+    panic!("Hot reload library is None");
 }
 ```
 
