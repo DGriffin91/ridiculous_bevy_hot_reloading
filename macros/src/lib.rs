@@ -1,11 +1,16 @@
 extern crate proc_macro;
 
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
+
 use proc_macro::TokenStream;
 use proc_macro2::*;
 use proc_macro_crate::{crate_name, FoundCrate};
 use syn::{parse_macro_input, FnArg, ItemFn};
 
-use quote::quote;
+use quote::{quote, ToTokens};
 
 #[proc_macro_attribute]
 pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -13,9 +18,21 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
     {
         return item;
     }
+
     let ast = parse_macro_input!(item as ItemFn);
 
     let fn_name = &ast.sig.ident;
+
+    // Try to make unique hash that is appended onto function name
+    // So that there can be multiple functions with the same name
+    // Waiting on https://github.com/rust-lang/rust/issues/54725
+    // For more things to hash like source_file(), etc...
+    let mut hasher = DefaultHasher::new();
+    // An advantage of including the sig here is that it will crash
+    // is the user changes the sig.
+    ast.sig.to_token_stream().to_string().hash(&mut hasher);
+    //format!("{:?}", Span::call_site().unwrap().source_file()).hash(&mut hasher);
+    let hash = hasher.finish();
 
     let mut args = Vec::new();
     let mut args_hot_func = Vec::new();
@@ -82,7 +99,7 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let return_type = ast.sig.output;
 
-    let fn_name_orig_code_str = &format!("ridiculous_bevy_hot_{}", fn_name);
+    let fn_name_orig_code_str = &format!("ridiculous_bevy_hot_{}_{}", fn_name, hash);
 
     let fn_name_orig_code = &Ident::new(fn_name_orig_code_str, Span::call_site());
 
