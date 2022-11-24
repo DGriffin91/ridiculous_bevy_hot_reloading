@@ -207,16 +207,20 @@ fn update_lib(
         }
         if hot_reload_int.library.is_none() {
             unsafe {
-                if let Ok(lib) = libloading::Library::new(hot_in_use_file_path) {
-                    // TODO set globals like IoTaskPool here
+                let lib = libloading::Library::new(&hot_in_use_file_path).unwrap_or_else(|_| {
+                    panic!(
+                        "Can't open required library {}",
+                        &hot_in_use_file_path.to_string_lossy()
+                    )
+                });
+                // TODO set globals like IoTaskPool here
 
-                    hot_reload_int.library = Some(lib);
-                    hot_reload_int.updated_this_frame = true;
-                    hot_reload_int.last_update_time = Instant::now();
-                    event.send(HotReloadEvent {
-                        last_update_time: hot_reload_int.last_update_time,
-                    });
-                }
+                hot_reload_int.library = Some(lib);
+                hot_reload_int.updated_this_frame = true;
+                hot_reload_int.last_update_time = Instant::now();
+                event.send(HotReloadEvent {
+                    last_update_time: hot_reload_int.last_update_time,
+                });
             }
         }
     }

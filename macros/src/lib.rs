@@ -113,12 +113,17 @@ pub fn make_hot(_attr: TokenStream, item: TokenStream) -> TokenStream {
             if let Some(lib) = &hot_reload_lib_internal_use_only.library {
                 unsafe {
                     let func: #crate_found::libloading::Symbol<unsafe extern "C" fn (#(#hot_arg_types),*) #return_type , > =
-                                           lib.get(#fn_name_orig_code_str.as_bytes()).unwrap();
+                        lib.get(#fn_name_orig_code_str.as_bytes()).unwrap_or_else(|_| {
+                            panic!(
+                                "Can't find required function {}",
+                                #fn_name_orig_code_str
+                            )
+                        });
                     return func(#(#hot_arg_names),*);
                 }
             }
-            //panic!("Could not run lib {}", #fn_name_orig_code_str);
-            return #fn_name_orig_code(#(#hot_arg_names),*);
+            panic!("Hot reload library is None");
+            //return #fn_name_orig_code(#(#hot_arg_names),*);
         }
     };
 
