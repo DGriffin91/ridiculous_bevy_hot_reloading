@@ -22,7 +22,7 @@ pub fn main() {
         .add_system(print_last_update)
         .add_plugin(HotReloadPlugin {
             auto_watch: true,
-            bevy_dynamic: true,
+            bevy_dylib: true,
             ..default()
         });
 
@@ -86,7 +86,13 @@ pub fn setup(
 
     // ground plane
     commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Plane { size: 50. }.into()),
+        mesh: meshes.add(
+            shape::Plane {
+                size: 50.,
+                ..default()
+            }
+            .into(),
+        ),
         material: materials.add(Color::SILVER.into()),
         ..default()
     });

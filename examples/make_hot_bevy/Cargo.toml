@@ -11,7 +11,7 @@ path = "src/lib.rs"
 crate-type = ["rlib", "dylib"]
 
 [dependencies]
-bevy = { version = "0.9", features = ["dynamic"] }
+bevy = { version = "0.10", features = ["bevy_dylib"] }
 
 # use features = ["bypass"] to bypass all hot macros
 ridiculous_bevy_hot_reloading = { version = "*", path = "../.." } 
@@ -22,4 +22,4 @@ opt-level = 3
 
 # Enable only a small amount of optimization in debug mode
 [profile.dev]
-opt-level = 3
+opt-level = 1

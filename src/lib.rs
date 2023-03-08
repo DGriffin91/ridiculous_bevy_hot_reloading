@@ -43,8 +43,8 @@ pub struct HotReloadLibInternalUseOnly {
 pub struct HotReloadPlugin {
     /// Start cargo watch with plugin
     pub auto_watch: bool,
-    /// Use bevy/dynamic feature with cargo watch
-    pub bevy_dynamic: bool,
+    /// Use bevy_dylib feature with cargo watch
+    pub bevy_dylib: bool,
     /// The name of the library target in Cargo.toml:
     /// [lib]
     /// name = "lib_your_project_name"
@@ -57,7 +57,7 @@ impl Default for HotReloadPlugin {
     fn default() -> Self {
         HotReloadPlugin {
             auto_watch: true,
-            bevy_dynamic: true,
+            bevy_dylib: true,
             library_name: None,
         }
     }
@@ -89,8 +89,8 @@ impl Plugin for HotReloadPlugin {
                 "build --lib --target-dir {} {} {}",
                 library_paths.folder.parent().unwrap().to_string_lossy(),
                 if release_mode { "--release" } else { "" },
-                if self.bevy_dynamic {
-                    "--features bevy/dynamic"
+                if self.bevy_dylib {
+                    "--features bevy/bevy_dylib"
                 } else {
                     ""
                 }
@@ -110,20 +110,23 @@ impl Plugin for HotReloadPlugin {
         }
 
         // TODO move as early as possible
-        app.add_system_to_stage(CoreStage::PreUpdate, update_lib)
-            .add_system_to_stage(CoreStage::PreUpdate, check_type_ids.after(update_lib))
-            //.add_system_to_stage(CoreStage::PostUpdate, clean_up_watch)
-            .add_event::<HotReloadEvent>()
-            .insert_resource(HotReloadLibInternalUseOnly {
-                cargo_watch_child: child,
-                library: None,
-                updated_this_frame: false,
-                // Using 1 second ago so to trigger lib load immediately instead of in 1 second
-                last_update_time: Instant::now().checked_sub(Duration::from_secs(1)).unwrap(),
-                library_paths,
-            })
-            .insert_resource(HoldTypeId(TypeId::of::<HoldTypeId>()))
-            .insert_resource(HotReload::default());
+        app.add_systems(
+            (update_lib, check_type_ids)
+                .chain()
+                .in_base_set(CoreSet::PreUpdate),
+        )
+        //.add_system_to_stage(CoreStage::PostUpdate, clean_up_watch)
+        .add_event::<HotReloadEvent>()
+        .insert_resource(HotReloadLibInternalUseOnly {
+            cargo_watch_child: child,
+            library: None,
+            updated_this_frame: false,
+            // Using 1 second ago so to trigger lib load immediately instead of in 1 second
+            last_update_time: Instant::now().checked_sub(Duration::from_secs(1)).unwrap(),
+            library_paths,
+        })
+        .insert_resource(HoldTypeId(TypeId::of::<HoldTypeId>()))
+        .insert_resource(HotReload::default());
     }
 }
 
@@ -258,13 +261,13 @@ fn check_type_ids(type_id: Res<HoldTypeId>, _hot_reload_int: Res<HotReloadLibInt
         do not match, this happens when the primary \
         and dynamic libraries are not identically \
         built. Make sure either both, or neither are \
-        using bevy/dynamic"
+        using bevy_dylib"
         );
     }
 }
 
 /// Copies library file before running so the original can be overwritten
-/// Only needed if using bevy/dynamic
+/// Only needed if using bevy_dylib
 pub fn dyn_load_main(main_function_name: &str, library_name: Option<String>) {
     if let Some(lib_paths) = LibPathSet::new(library_name) {
         let lib_file_path = lib_paths.lib_file_path();
