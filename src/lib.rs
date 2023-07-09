@@ -24,7 +24,7 @@ impl Default for HotReload {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Event)]
 pub struct HotReloadEvent {
     pub last_update_time: Instant,
 }
@@ -110,23 +110,19 @@ impl Plugin for HotReloadPlugin {
         }
 
         // TODO move as early as possible
-        app.add_systems(
-            (update_lib, check_type_ids)
-                .chain()
-                .in_base_set(CoreSet::PreUpdate),
-        )
-        //.add_system_to_stage(CoreStage::PostUpdate, clean_up_watch)
-        .add_event::<HotReloadEvent>()
-        .insert_resource(HotReloadLibInternalUseOnly {
-            cargo_watch_child: child,
-            library: None,
-            updated_this_frame: false,
-            // Using 1 second ago so to trigger lib load immediately instead of in 1 second
-            last_update_time: Instant::now().checked_sub(Duration::from_secs(1)).unwrap(),
-            library_paths,
-        })
-        .insert_resource(HoldTypeId(TypeId::of::<HoldTypeId>()))
-        .insert_resource(HotReload::default());
+        app.add_systems(PreUpdate, (update_lib, check_type_ids).chain())
+            //.add_system_to_stage(CoreStage::PostUpdate, clean_up_watch)
+            .add_event::<HotReloadEvent>()
+            .insert_resource(HotReloadLibInternalUseOnly {
+                cargo_watch_child: child,
+                library: None,
+                updated_this_frame: false,
+                // Using 1 second ago so to trigger lib load immediately instead of in 1 second
+                last_update_time: Instant::now().checked_sub(Duration::from_secs(1)).unwrap(),
+                library_paths,
+            })
+            .insert_resource(HoldTypeId(TypeId::of::<HoldTypeId>()))
+            .insert_resource(HotReload::default());
     }
 }
 

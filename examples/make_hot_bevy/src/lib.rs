@@ -15,16 +15,16 @@ use ridiculous_bevy_hot_reloading::{
 pub fn main() {
     let mut app = App::new();
 
-    app.add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        .add_startup_system(setup)
-        .add_system(rotate)
-        .add_system(rotate2)
-        .add_system(print_last_update)
-        .add_plugin(HotReloadPlugin {
+    app.add_plugins((
+        DefaultPlugins.set(ImagePlugin::default_nearest()),
+        HotReloadPlugin {
             auto_watch: true,
             bevy_dylib: true,
             ..default()
-        });
+        },
+    ))
+    .add_systems(Startup, setup)
+    .add_systems(Update, (rotate, rotate2, print_last_update));
 
     app.run();
 }
