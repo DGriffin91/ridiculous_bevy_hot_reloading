@@ -16,5 +16,4 @@ proc-macro-crate = "1.2"
 proc-macro = true
 
 [features]
-# Bypass all hot macros
-bypass = []
+hot_reload = []

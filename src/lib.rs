@@ -1,7 +1,7 @@
 pub extern crate hot_reloading_macros;
 pub extern crate libloading;
 
-use std::{any::TypeId, fs::metadata, path::PathBuf, time::Duration};
+use std::{any::TypeId, path::PathBuf, time::Duration};
 
 use bevy::{prelude::*, utils::Instant};
 use libloading::Library;
@@ -65,7 +65,7 @@ impl Default for HotReloadPlugin {
 
 impl Plugin for HotReloadPlugin {
     fn build(&self, app: &mut App) {
-        #[cfg(feature = "bypass")]
+        #[cfg(not(feature = "hot_reload"))]
         {
             app.add_event::<HotReloadEvent>()
                 .insert_resource(HotReload {
@@ -76,53 +76,56 @@ impl Plugin for HotReloadPlugin {
             return;
         }
 
-        let mut child = None;
+        #[cfg(feature = "hot_reload")]
+        {
+            let mut child = None;
 
-        let release_mode = false;
-        #[cfg(not(debug_assertions))]
-        let release_mode = true;
+            let release_mode = false;
+            #[cfg(not(debug_assertions))]
+            let release_mode = true;
 
-        let library_paths = LibPathSet::new(self.library_name.clone()).unwrap();
+            let library_paths = LibPathSet::new(self.library_name.clone()).unwrap();
 
-        if self.auto_watch {
-            let build_cmd = format!(
-                "build --lib --target-dir {} {} {}",
-                library_paths.folder.parent().unwrap().to_string_lossy(),
-                if release_mode { "--release" } else { "" },
-                if self.bevy_dylib {
-                    "--features bevy/bevy_dylib"
-                } else {
-                    ""
-                }
-            );
-            child = Some(ChildGuard(
-                std::process::Command::new("cargo")
-                    .arg("watch")
-                    .arg("--postpone")
-                    .arg("--watch-when-idle")
-                    .arg("-w")
-                    .arg("src")
-                    .arg("-x")
-                    .arg(build_cmd)
-                    .spawn()
-                    .expect("cargo watch command failed, make sure cargo watch is installed"),
-            ));
+            if self.auto_watch {
+                let build_cmd = format!(
+                    "build --lib --target-dir {} {} {} --features ridiculous_bevy_hot_reloading/hot_reload",
+                    library_paths.folder.parent().unwrap().to_string_lossy(),
+                    if release_mode { "--release" } else { "" },
+                    if self.bevy_dylib {
+                        "--features bevy/dynamic_linking"
+                    } else {
+                        ""
+                    },
+                );
+                child = Some(ChildGuard(
+                    std::process::Command::new("cargo")
+                        .arg("watch")
+                        .arg("--postpone")
+                        .arg("--watch-when-idle")
+                        .arg("-w")
+                        .arg("src")
+                        .arg("-x")
+                        .arg(build_cmd)
+                        .spawn()
+                        .expect("cargo watch command failed, make sure cargo watch is installed"),
+                ));
+            }
+
+            // TODO move as early as possible
+            app.add_systems(PreUpdate, (update_lib, check_type_ids).chain())
+                //.add_system_to_stage(CoreStage::PostUpdate, clean_up_watch)
+                .add_event::<HotReloadEvent>()
+                .insert_resource(HotReloadLibInternalUseOnly {
+                    cargo_watch_child: child,
+                    library: None,
+                    updated_this_frame: false,
+                    // Using 1 second ago so to trigger lib load immediately instead of in 1 second
+                    last_update_time: Instant::now().checked_sub(Duration::from_secs(1)).unwrap(),
+                    library_paths,
+                })
+                .insert_resource(HoldTypeId(TypeId::of::<HoldTypeId>()))
+                .insert_resource(HotReload::default());
         }
-
-        // TODO move as early as possible
-        app.add_systems(PreUpdate, (update_lib, check_type_ids).chain())
-            //.add_system_to_stage(CoreStage::PostUpdate, clean_up_watch)
-            .add_event::<HotReloadEvent>()
-            .insert_resource(HotReloadLibInternalUseOnly {
-                cargo_watch_child: child,
-                library: None,
-                updated_this_frame: false,
-                // Using 1 second ago so to trigger lib load immediately instead of in 1 second
-                last_update_time: Instant::now().checked_sub(Duration::from_secs(1)).unwrap(),
-                library_paths,
-            })
-            .insert_resource(HoldTypeId(TypeId::of::<HoldTypeId>()))
-            .insert_resource(HotReload::default());
     }
 }
 
@@ -159,7 +162,7 @@ impl LibPathSet {
     fn lib_file_path(&self) -> PathBuf {
         self.folder.join(&self.name).with_extension(&self.extension)
     }
-
+    #[cfg(feature = "hot_reload")]
     /// File path copied to for hot reloads
     fn hot_in_use_file_path(&self) -> PathBuf {
         self.folder
@@ -175,6 +178,7 @@ impl LibPathSet {
     }
 }
 
+#[cfg(feature = "hot_reload")]
 fn update_lib(
     mut hot_reload_int: ResMut<HotReloadLibInternalUseOnly>,
     mut hot_reload: ResMut<HotReload>,
@@ -192,8 +196,8 @@ fn update_lib(
     // copy over and load lib if it has been updated, or hasn't been initially
     if lib_file_path.is_file() {
         if hot_in_use_file_path.is_file() {
-            let hot_lib_meta = metadata(&hot_in_use_file_path).unwrap();
-            let main_lib_meta = metadata(&lib_file_path).unwrap();
+            let hot_lib_meta = std::fs::metadata(&hot_in_use_file_path).unwrap();
+            let main_lib_meta = std::fs::metadata(&lib_file_path).unwrap();
             if hot_lib_meta.modified().unwrap() < main_lib_meta.modified().unwrap()
                 && hot_reload_int.last_update_time.elapsed() > Duration::from_secs(1)
             {
@@ -246,6 +250,7 @@ mod ridiculous_bevy_hot_reloading {
     pub use super::*;
 }
 
+#[cfg(feature = "hot_reload")]
 #[hot_reloading_macros::make_hot]
 fn check_type_ids(type_id: Res<HoldTypeId>, _hot_reload_int: Res<HotReloadLibInternalUseOnly>) {
     if type_id.0 != TypeId::of::<HoldTypeId>() {

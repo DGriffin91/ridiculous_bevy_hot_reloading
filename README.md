@@ -38,19 +38,23 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
+# This naming scheme with "lib_" prefix is default but can be configured with HotReload::library_name.
 name = "lib_your_app" 
 path = "src/lib.rs"
 crate-type = ["rlib", "dylib"]
 
+[features]
+hot_reload = ["ridiculous_bevy_hot_reloading/hot_reload"]
+
 [dependencies]
-# use "bypass" feature to bypass all hot macros
 ridiculous_bevy_hot_reloading = { git = "https://github.com/DGriffin91/ridiculous_bevy_hot_reloading" } 
 ```
-*This naming scheme with "lib_" prefix is default but can be configured with HotReload::library_name.*
 
+To run with hot reloading:
 
-
-
+```shell
+cargo run --features hot_reload
+```
 
 ## How `#[make_hot]` works
 Given this rotate system as input:
