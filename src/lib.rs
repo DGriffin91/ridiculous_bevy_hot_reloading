@@ -90,15 +90,15 @@ impl Plugin for HotReloadPlugin {
 
         if self.auto_watch {
             let build_cmd = format!(
-                    "build --lib --target-dir {} {} {} --features ridiculous_bevy_hot_reloading/hot_reload",
-                    library_paths.folder.parent().unwrap().to_string_lossy(),
-                    if release_mode { "--release" } else { "" },
-                    if self.bevy_dylib {
-                        "--features bevy/dynamic_linking"
-                    } else {
-                        ""
-                    },
-                );
+                "build --lib --target-dir {} {} {} --features ridiculous_bevy_hot_reloading/hot_reload",
+                library_paths.folder.parent().unwrap().to_string_lossy(),
+                if release_mode { "--release" } else { "" },
+                if self.bevy_dylib {
+                    "--features bevy/dynamic_linking"
+                } else {
+                    ""
+                },
+            );
             child = Some(ChildGuard({
                 let mut command = std::process::Command::new("cargo");
                 command
