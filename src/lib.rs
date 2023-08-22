@@ -43,6 +43,9 @@ pub struct HotReloadLibInternalUseOnly {
 pub struct HotReloadPlugin {
     /// Start cargo watch with plugin
     pub auto_watch: bool,
+    /// Should cargo watch use polling to detect file changes?
+    /// Defaults to true when run in WSL, otherwise false.
+    pub poll: bool,
     /// Use bevy_dylib feature with cargo watch
     pub bevy_dylib: bool,
     /// The name of the library target in Cargo.toml:
@@ -57,6 +60,7 @@ impl Default for HotReloadPlugin {
     fn default() -> Self {
         HotReloadPlugin {
             auto_watch: true,
+            poll: is_wsl(),
             bevy_dylib: true,
             library_name: None,
         }
@@ -64,30 +68,28 @@ impl Default for HotReloadPlugin {
 }
 
 impl Plugin for HotReloadPlugin {
+    #[cfg(not(feature = "hot_reload"))]
     fn build(&self, app: &mut App) {
-        #[cfg(not(feature = "hot_reload"))]
-        {
-            app.add_event::<HotReloadEvent>()
-                .insert_resource(HotReload {
-                    updated_this_frame: false,
-                    disable_reload: true,
-                    ..default()
-                });
-            return;
-        }
+        app.add_event::<HotReloadEvent>()
+            .insert_resource(HotReload {
+                updated_this_frame: false,
+                disable_reload: true,
+                ..default()
+            });
+    }
 
-        #[cfg(feature = "hot_reload")]
-        {
-            let mut child = None;
+    #[cfg(feature = "hot_reload")]
+    fn build(&self, app: &mut App) {
+        let mut child = None;
 
-            let release_mode = false;
-            #[cfg(not(debug_assertions))]
-            let release_mode = true;
+        let release_mode = false;
+        #[cfg(not(debug_assertions))]
+        let release_mode = true;
 
-            let library_paths = LibPathSet::new(self.library_name.clone()).unwrap();
+        let library_paths = LibPathSet::new(self.library_name.clone()).unwrap();
 
-            if self.auto_watch {
-                let build_cmd = format!(
+        if self.auto_watch {
+            let build_cmd = format!(
                     "build --lib --target-dir {} {} {} --features ridiculous_bevy_hot_reloading/hot_reload",
                     library_paths.folder.parent().unwrap().to_string_lossy(),
                     if release_mode { "--release" } else { "" },
@@ -97,35 +99,39 @@ impl Plugin for HotReloadPlugin {
                         ""
                     },
                 );
-                child = Some(ChildGuard(
-                    std::process::Command::new("cargo")
-                        .arg("watch")
-                        .arg("--postpone")
-                        .arg("--watch-when-idle")
-                        .arg("-w")
-                        .arg("src")
-                        .arg("-x")
-                        .arg(build_cmd)
-                        .spawn()
-                        .expect("cargo watch command failed, make sure cargo watch is installed"),
-                ));
-            }
-
-            // TODO move as early as possible
-            app.add_systems(PreUpdate, (update_lib, check_type_ids).chain())
-                //.add_system_to_stage(CoreStage::PostUpdate, clean_up_watch)
-                .add_event::<HotReloadEvent>()
-                .insert_resource(HotReloadLibInternalUseOnly {
-                    cargo_watch_child: child,
-                    library: None,
-                    updated_this_frame: false,
-                    // Using 1 second ago so to trigger lib load immediately instead of in 1 second
-                    last_update_time: Instant::now().checked_sub(Duration::from_secs(1)).unwrap(),
-                    library_paths,
-                })
-                .insert_resource(HoldTypeId(TypeId::of::<HoldTypeId>()))
-                .insert_resource(HotReload::default());
+            child = Some(ChildGuard({
+                let mut command = std::process::Command::new("cargo");
+                command
+                    .arg("watch")
+                    .arg("--postpone")
+                    .arg("--watch-when-idle")
+                    .arg("-w")
+                    .arg("src")
+                    .arg("-x")
+                    .arg(build_cmd);
+                if self.poll {
+                    command.arg("--poll");
+                }
+                command
+                    .spawn()
+                    .expect("cargo watch command failed, make sure cargo watch is installed")
+            }));
         }
+
+        // TODO move as early as possible
+        app.add_systems(PreUpdate, (update_lib, check_type_ids).chain())
+            //.add_system_to_stage(CoreStage::PostUpdate, clean_up_watch)
+            .add_event::<HotReloadEvent>()
+            .insert_resource(HotReloadLibInternalUseOnly {
+                cargo_watch_child: child,
+                library: None,
+                updated_this_frame: false,
+                // Using 1 second ago so to trigger lib load immediately instead of in 1 second
+                last_update_time: Instant::now().checked_sub(Duration::from_secs(1)).unwrap(),
+                library_paths,
+            })
+            .insert_resource(HoldTypeId(TypeId::of::<HoldTypeId>()))
+            .insert_resource(HotReload::default());
     }
 }
 
@@ -287,4 +293,22 @@ pub fn dyn_load_main(main_function_name: &str, library_name: Option<String>) {
             panic!("Could not find library file {:?}", lib_file_path);
         }
     }
+}
+
+/// Test if the program is running under WSL
+#[cfg(target_os = "linux")]
+fn is_wsl() -> bool {
+    if let Ok(b) = std::fs::read("/proc/sys/kernel/osrelease") {
+        if let Ok(s) = std::str::from_utf8(&b) {
+            let a = s.to_ascii_lowercase();
+            return a.contains("microsoft") || a.contains("wsl");
+        }
+    }
+    false
+}
+
+/// Test if the program is running under WSL
+#[cfg(not(target_os = "linux"))]
+fn is_wsl() -> bool {
+    false
 }
