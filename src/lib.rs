@@ -310,5 +310,8 @@ fn is_wsl() -> bool {
 /// Test if the program is running under WSL
 #[cfg(not(target_os = "linux"))]
 fn is_wsl() -> bool {
+    if let Ok(dir) = std::env::current_dir() {
+        return dir.to_string_lossy().starts_with("\\\\wsl");
+    }
     false
 }
