@@ -4,7 +4,7 @@ This crate is currently very experimental.
 
 # `#[make_hot]`
 
-Use with bevy 0.12
+Use with bevy 0.13
 ```rs
 //Default has auto_watch: true, bevy_bevy_dylib: true, and lib_ prefix
 app.add_plugin(HotReloadPlugin::default());

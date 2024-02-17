@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 hot_reloading_macros = { path = "macros" }
 libloading = "0.7"
-bevy = { version = "0.12" }
+bevy = "0.13"
 
 [features]
 hot_reload = ["hot_reloading_macros/hot_reload"]
