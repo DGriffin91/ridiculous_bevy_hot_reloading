@@ -23,3 +23,7 @@ opt-level = 3
 # Enable only a small amount of optimization in debug mode
 [profile.dev]
 opt-level = 1
+
+[patch.crates-io]
+# For testing fix for blake3 env change rebuild thrashing issue
+blake3 = { git = "https://github.com/hintron/BLAKE3", branch = "hintron/fix-blake-rebuild-issue" }

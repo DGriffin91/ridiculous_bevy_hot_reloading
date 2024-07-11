@@ -1,5 +1,7 @@
 # Ridiculous bevy hot reloading
 
+Currently, to use this you'll need to [override the Blake3 crate dependency](https://github.com/bevyengine/bevy/issues/14271#issuecomment-2223817890) in your cargo.toml which is causing unnecessary recompilation of blake3, and in turn Bevy.
+
 This crate is currently very experimental.
 
 # `#[make_hot]`
