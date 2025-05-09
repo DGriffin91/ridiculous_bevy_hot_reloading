@@ -1,10 +1,15 @@
 pub extern crate hot_reloading_macros;
 pub extern crate libloading;
 
-use std::{any::TypeId, path::PathBuf, time::Duration};
+use std::{
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 
-use bevy::{prelude::*, utils::Instant};
+use bevy::prelude::*;
 use libloading::Library;
+#[cfg(feature = "hot_reload")]
+use std::any::TypeId;
 
 /// Get info about HotReload state.
 #[derive(Resource)]
@@ -227,7 +232,7 @@ fn update_lib(
                 hot_reload_int.library = Some(lib);
                 hot_reload_int.updated_this_frame = true;
                 hot_reload_int.last_update_time = Instant::now();
-                event.send(HotReloadEvent {
+                event.write(HotReloadEvent {
                     last_update_time: hot_reload_int.last_update_time,
                 });
             }
@@ -250,8 +255,10 @@ impl Drop for ChildGuard {
 }
 
 #[derive(Resource)]
+#[cfg(feature = "hot_reload")]
 struct HoldTypeId(TypeId);
 
+#[cfg(feature = "hot_reload")]
 mod ridiculous_bevy_hot_reloading {
     pub use super::*;
 }
