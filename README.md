@@ -1,7 +1,5 @@
 # Ridiculous bevy hot reloading
 
-This crate is currently very experimental.
-
 Bevy now has limited native hot reloading support: https://bevy.org/news/bevy-0-17/#hot-patching-systems-in-a-running-app
 
 This crate will likely not be updated in the future.
