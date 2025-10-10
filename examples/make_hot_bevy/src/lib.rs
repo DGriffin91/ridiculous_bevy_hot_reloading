@@ -1,13 +1,11 @@
 use std::f32::consts::PI;
 
 use bevy::{
+    asset::RenderAssetUsages,
     color::palettes::css::SILVER,
     math::vec3,
     prelude::*,
-    render::{
-        render_asset::RenderAssetUsages,
-        render_resource::{Extent3d, TextureDimension, TextureFormat},
-    },
+    render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
 use ridiculous_bevy_hot_reloading::{
@@ -157,7 +155,7 @@ pub fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
 
 // hot_reload.updated_this_frame or HotReloadEvent can be used to run some code only on update
 #[make_hot]
-pub fn print_last_update(hot_reload: Res<HotReload>, mut hot_event: EventReader<HotReloadEvent>) {
+pub fn print_last_update(hot_reload: Res<HotReload>, mut hot_event: MessageReader<HotReloadEvent>) {
     if hot_reload.updated_this_frame {
         println!("HOT RELOAD THIS FRAME");
     }

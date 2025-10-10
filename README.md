@@ -2,9 +2,13 @@
 
 This crate is currently very experimental.
 
+Bevy now has limited native hot reloading support: https://bevy.org/news/bevy-0-17/#hot-patching-systems-in-a-running-app
+
+This crate will likely not be updated in the future.
+
 # `#[make_hot]`
 
-Use with bevy 0.16
+Use with bevy 0.17
 ```rs
 //Default has auto_watch: true, bevy_bevy_dylib: true, and lib_ prefix
 app.add_plugin(HotReloadPlugin::default());

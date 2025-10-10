@@ -29,7 +29,7 @@ impl Default for HotReload {
     }
 }
 
-#[derive(Debug, Event)]
+#[derive(Debug, Message)]
 pub struct HotReloadEvent {
     pub last_update_time: Instant,
 }
@@ -75,7 +75,7 @@ impl Default for HotReloadPlugin {
 impl Plugin for HotReloadPlugin {
     #[cfg(not(feature = "hot_reload"))]
     fn build(&self, app: &mut App) {
-        app.add_event::<HotReloadEvent>()
+        app.add_message::<HotReloadEvent>()
             .insert_resource(HotReload {
                 updated_this_frame: false,
                 disable_reload: true,
@@ -126,7 +126,7 @@ impl Plugin for HotReloadPlugin {
         // TODO move as early as possible
         app.add_systems(PreUpdate, (update_lib, check_type_ids).chain())
             //.add_system_to_stage(CoreStage::PostUpdate, clean_up_watch)
-            .add_event::<HotReloadEvent>()
+            .add_message::<HotReloadEvent>()
             .insert_resource(HotReloadLibInternalUseOnly {
                 cargo_watch_child: child,
                 library: None,
@@ -193,7 +193,7 @@ impl LibPathSet {
 fn update_lib(
     mut hot_reload_int: ResMut<HotReloadLibInternalUseOnly>,
     mut hot_reload: ResMut<HotReload>,
-    mut event: EventWriter<HotReloadEvent>,
+    mut event: MessageWriter<HotReloadEvent>,
 ) {
     hot_reload_int.updated_this_frame = false;
     hot_reload.updated_this_frame = false;
